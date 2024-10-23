@@ -12,7 +12,6 @@ public class AgentController : MonoBehaviour
     private Vector2Int goalPosition;  // The position of the goal
     private bool[,] maze;             // The maze array (walkable or not)
     private bool[,] visited;          // Array to track visited positions
-    private Stack<Vector2Int> pathStack = new Stack<Vector2Int>(); // DFS stack
 
     private GameObject agentObj;      // The GameObject for the agent
     private Coroutine explorationCoroutine;  // Reference to the running exploration coroutine
@@ -28,11 +27,12 @@ public class AgentController : MonoBehaviour
             Destroy(agentObj);
         }
 
+        // Create a new agent GameObject and set the sorting layer
         agentObj = new GameObject("Agent");
         agentObj.transform.position = new Vector3(startPosition.x * tileScale, startPosition.y * tileScale, 0);
         SpriteRenderer renderer = agentObj.AddComponent<SpriteRenderer>();
         renderer.sprite = agentSprite;
-        renderer.sortingOrder = 2;  // Ensure agent is rendered above the maze
+        renderer.sortingOrder = 10;  // Ensure agent is rendered above the maze and trail
     }
 
     // Initialize the maze data and goal position (called from OscarsMazeGenerator)

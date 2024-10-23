@@ -109,7 +109,7 @@ public class OscarsMazeGenerator : MonoBehaviour
             wallList.RemoveAt(randomIndex);
 
             // Ensure the wall is within bounds
-            if (!IsInBounds(wall.x, wall.y))
+            if (!IsInBounds(wall))
                 continue;
 
             // Get neighboring cells (path candidates)
@@ -123,11 +123,18 @@ public class OscarsMazeGenerator : MonoBehaviour
                 // Add adjacent walls to the list
                 foreach (var neighbor in neighbors)
                 {
-                    if (!maze[neighbor.x, neighbor.y])
+                    if (IsInBounds(neighbor) && !maze[neighbor.x, neighbor.y])
                     {
-                        AddAdjacentWalls(neighbor.x, neighbor.y, wallList);
+                        wallList.Add(neighbor);
                     }
                 }
+            }
+
+            // Safety check to prevent infinite loop
+            if (wallList.Count > 100000) // Arbitrary large number to prevent crashing
+            {
+                Debug.LogError("Prim's Algorithm: Potential infinite loop detected. Aborting generation.");
+                break;
             }
         }
     }
@@ -233,10 +240,16 @@ public class OscarsMazeGenerator : MonoBehaviour
         }
     }
 
-    // Check if the coordinates are within bounds
+    // Check if the coordinates are within bounds (int overload)
     bool IsInBounds(int x, int y)
     {
         return x > 0 && x < width - 1 && y > 0 && y < height - 1;
+    }
+
+    // Check if the coordinates are within bounds (Vector2Int overload)
+    bool IsInBounds(Vector2Int position)
+    {
+        return IsInBounds(position.x, position.y);
     }
 
     // Place the goal at the top-right corner
