@@ -351,7 +351,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1317421385}
-  - component: {fileID: 1317421386}
+  - component: {fileID: 1317421388}
   m_Layer: 0
   m_Name: MazeGenerator
   m_TagString: Untagged
@@ -374,7 +374,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1317421386
+--- !u!114 &1317421388
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -383,17 +383,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1317421384}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 157182cea6ee3224fb7811cc89374be4, type: 3}
+  m_Script: {fileID: 11500000, guid: eb9c046d4e064bf4faa77a224d136456, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 50
-  height: 50
   wallPrefab: {fileID: 2578954439767863642, guid: bf78978874867964f987b6d4a39f0889, type: 3}
   floorPrefab: {fileID: 6652955654351153951, guid: 70c3f37f6e7232e4aad3546edc031210, type: 3}
-  pathPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
-  goalPrefab: {fileID: 3016908579655318593, guid: 559719cea6992624885f9e37e47d253b, type: 3}
+  agentPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
   startPrefab: {fileID: 2605630132837582212, guid: a258e299dd7b74c489f0f2f07e8c310b, type: 3}
-  pathAnimationDelay: 0.1
+  goalPrefab: {fileID: 3016908579655318593, guid: 559719cea6992624885f9e37e47d253b, type: 3}
+  width: 50
+  height: 50
+  numAgents: 3
+  agentSteps: 100
+  stepDelay: 0.01
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
