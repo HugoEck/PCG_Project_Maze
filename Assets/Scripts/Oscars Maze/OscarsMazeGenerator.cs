@@ -13,22 +13,22 @@ public class OscarsMazeGenerator : MonoBehaviour
 
     public float tileScale = 1f;
 
-    private bool[,] maze;
-    private Stack<Vector2Int> stack = new Stack<Vector2Int>();
-    private List<Vector2Int> directions = new List<Vector2Int>
-    {
-        Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right
-    };
-
+    private bool[,] maze;  // The maze structure (walkable or not)
     private Vector2Int startPosition;
     private Vector2Int goalPosition;
 
     void Start()
     {
+        // Ensure the width and height are odd numbers to avoid double boundary issues
+        if (width % 2 == 0) width--;
+        if (height % 2 == 0) height--;
+
+        // Generate and render the maze
         GenerateMaze();
         RenderMaze();
         AdjustCameraToFitMaze();
 
+        // Debug: Log the start and goal positions
         Debug.Log("Start Position: " + startPosition.x + ", " + startPosition.y);
         Debug.Log("Goal Position: " + goalPosition.x + ", " + goalPosition.y);
 
@@ -36,10 +36,15 @@ public class OscarsMazeGenerator : MonoBehaviour
         AgentController agentController = FindObjectOfType<AgentController>();
         if (agentController != null)
         {
-            agentController.InitializeMaze(maze, goalPosition);
+            agentController.InitializeMaze(maze, goalPosition);  // Pass the maze data to the agent
+        }
+        else
+        {
+            Debug.LogError("AgentController not found in the scene!");
         }
     }
 
+    // Generate a maze using DFS
     void GenerateMaze()
     {
         maze = new bool[width, height];
@@ -47,73 +52,63 @@ public class OscarsMazeGenerator : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                maze[x, y] = false;  // Set everything to walls initially
+                maze[x, y] = false;  // Set everything to walls
             }
         }
 
-        if (width % 2 == 0) width--;
-        if (height % 2 == 0) height--;
+        // Example: DFS to create a random maze
+        startPosition = new Vector2Int(1, 1);
+        goalPosition = new Vector2Int(width - 2, height - 2);
 
-        startPosition = new Vector2Int(1, 1);  // Hardcoded to (1,1) as the valid start position
-        maze[startPosition.x, startPosition.y] = true;  // Set start position to walkable
-
+        // Create a simple random maze using DFS
+        Stack<Vector2Int> stack = new Stack<Vector2Int>();
+        maze[startPosition.x, startPosition.y] = true;  // Start is walkable
         stack.Push(startPosition);
+
+        Vector2Int[] directions = {
+            Vector2Int.up,
+            Vector2Int.down,
+            Vector2Int.left,
+            Vector2Int.right
+        };
 
         while (stack.Count > 0)
         {
-            Vector2Int currentCell = stack.Peek();
-            List<Vector2Int> validNeighbors = new List<Vector2Int>();
+            Vector2Int current = stack.Pop();
+            List<Vector2Int> neighbors = new List<Vector2Int>();
 
-            foreach (Vector2Int dir in directions)
+            // Check 2 tiles away in all directions
+            foreach (Vector2Int direction in directions)
             {
-                Vector2Int neighbor = currentCell + dir * 2;  // Check 2 cells away
+                Vector2Int neighbor = current + direction * 2;
                 if (IsInBounds(neighbor) && !maze[neighbor.x, neighbor.y])
                 {
-                    validNeighbors.Add(neighbor);
+                    neighbors.Add(neighbor);
                 }
             }
 
-            if (validNeighbors.Count > 0)
+            if (neighbors.Count > 0)
             {
-                Vector2Int chosenNeighbor = validNeighbors[Random.Range(0, validNeighbors.Count)];
-                Vector2Int wall = currentCell + (chosenNeighbor - currentCell) / 2;
+                // Randomly pick a neighbor
+                stack.Push(current);
+                Vector2Int chosenNeighbor = neighbors[Random.Range(0, neighbors.Count)];
 
+                // Make the path between the current and chosen neighbor walkable
+                Vector2Int wall = current + (chosenNeighbor - current) / 2;
                 maze[wall.x, wall.y] = true;
                 maze[chosenNeighbor.x, chosenNeighbor.y] = true;
+
                 stack.Push(chosenNeighbor);
             }
-            else
-            {
-                stack.Pop();
-            }
         }
 
-        goalPosition = FindValidGoalPosition();
+        // Ensure the goal position is walkable
         maze[goalPosition.x, goalPosition.y] = true;
-    }
-
-    Vector2Int FindValidGoalPosition()
-    {
-        for (int x = width - 2; x > 0; x--)
-        {
-            for (int y = height - 2; y > 0; y--)
-            {
-                if (maze[x, y])
-                {
-                    return new Vector2Int(x, y);
-                }
-            }
-        }
-        return new Vector2Int(width - 2, height - 2);  // Default fallback position
-    }
-
-    bool IsInBounds(Vector2Int pos)
-    {
-        return pos.x > 0 && pos.y > 0 && pos.x < width - 1 && pos.y < height - 1;
     }
 
     void RenderMaze()
     {
+        // Render the maze tiles as floor and walls
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -122,19 +117,23 @@ public class OscarsMazeGenerator : MonoBehaviour
 
                 if (maze[x, y])
                 {
+                    // Floor tile (walkable)
                     CreateSpriteObject(floorSprite, position, 0);
                 }
                 else
                 {
+                    // Wall tile (not walkable)
                     CreateSpriteObject(wallSprite, position, 0);
                 }
             }
         }
 
+        // Render the goal point
         Vector3 goalPos = new Vector3(goalPosition.x * tileScale, goalPosition.y * tileScale, 0);
         CreateSpriteObject(goalSprite, goalPos, 1);
     }
 
+    // Helper method to create sprites in the scene
     void CreateSpriteObject(Sprite sprite, Vector3 position, int sortingOrder)
     {
         GameObject obj = new GameObject("TileSprite");
@@ -144,23 +143,13 @@ public class OscarsMazeGenerator : MonoBehaviour
         renderer.sortingOrder = sortingOrder;
     }
 
-    public Vector2Int GetStartPosition()
-    {
-        return startPosition;
-    }
-
-    public Vector2Int GetGoalPosition()
-    {
-        return goalPosition;
-    }
-
-    // Adjust the camera to fit the entire maze
+    // Adjust the camera to fit the entire maze on screen
     void AdjustCameraToFitMaze()
     {
         Camera mainCamera = Camera.main;
         if (mainCamera != null)
         {
-            // Calculate the orthographic size to fit the maze height
+            // Calculate the orthographic size to fit the maze's height
             float mazeHeight = height * tileScale;
             float mazeWidth = width * tileScale;
 
@@ -177,9 +166,14 @@ public class OscarsMazeGenerator : MonoBehaviour
                 mainCamera.orthographicSize = (mazeWidth / 2f) / screenAspect;
             }
 
-            // Center the camera slightly above the maze's center
-            float verticalShift = tileScale * -0.36f;  // Adjust this value to control how much to move upwards
-            mainCamera.transform.position = new Vector3((width / 2f) * tileScale, (height / 2f) * tileScale + verticalShift, -10f);
+            // Center the camera on the maze
+            mainCamera.transform.position = new Vector3((width / 2f) * tileScale, (height / 2f) * tileScale, -10f);
         }
+    }
+
+    // Check if a position is within bounds of the maze
+    bool IsInBounds(Vector2Int pos)
+    {
+        return pos.x > 0 && pos.x < width - 1 && pos.y > 0 && pos.y < height - 1;
     }
 }
