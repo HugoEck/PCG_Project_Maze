@@ -60,10 +60,9 @@ public class UIController : MonoBehaviour
         gameOverPanel.SetActive(true);
     }
 
-    // Called when the restart button is clicked, reloads the scene to reset everything
+    // Called when the restart button is clicked, loads the main menu scene
     public void OnRestartButtonClick()
     {
-        // Restart the scene (which regenerates the maze and resets the timer)
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        SceneManager.LoadScene("MainMenuScene");  // Change this to your main menu scene name
     }
 }

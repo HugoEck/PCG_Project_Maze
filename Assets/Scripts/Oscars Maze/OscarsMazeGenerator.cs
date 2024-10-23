@@ -1,179 +1,281 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class OscarsMazeGenerator : MonoBehaviour
 {
-    public int width;
-    public int height;
+    public Sprite wallSprite;      // The sprite for the wall
+    public Sprite floorSprite;     // The sprite for the floor
+    public Sprite goalPointSprite; // The sprite for the goal point
 
-    public Sprite wallSprite;
-    public Sprite floorSprite;
-    public Sprite goalSprite;
+    public GameObject agentObject; // Reference to the agent GameObject
 
-    public float tileScale = 1f;
+    private int width;
+    private int height;
 
-    private bool[,] maze;  // The maze structure (walkable or not)
-    private Vector2Int startPosition;
-    private Vector2Int goalPosition;
+    private bool[,] maze;          // Boolean array to represent the maze (true = walkable, false = wall)
 
-    void Start()
+    private Camera cam;            // Reference to the Main Camera
+
+    // Method to start maze generation based on the selected algorithm
+    private void Start()
     {
-        // Ensure the width and height are odd numbers to avoid double boundary issues
-        if (width % 2 == 0) width--;
-        if (height % 2 == 0) height--;
+        // Get the selected algorithm and maze size from the main menu
+        width = MainMenuController.mazeSize;
+        height = MainMenuController.mazeSize;
+        string algorithm = MainMenuController.selectedAlgorithm;
 
-        // Generate and render the maze
-        GenerateMaze();
-        RenderMaze();
-        AdjustCameraToFitMaze();
+        // Initialize the maze array
+        maze = new bool[width, height];
 
-        // Debug: Log the start and goal positions
-        Debug.Log("Start Position: " + startPosition.x + ", " + startPosition.y);
-        Debug.Log("Goal Position: " + goalPosition.x + ", " + goalPosition.y);
+        // Get the camera reference
+        cam = Camera.main;
 
-        // Pass maze data and goal position to the agent
-        AgentController agentController = FindObjectOfType<AgentController>();
-        if (agentController != null)
+        // Generate the maze based on the selected algorithm
+        if (algorithm == "DFS")
         {
-            agentController.InitializeMaze(maze, goalPosition);  // Pass the maze data to the agent
+            GenerateMazeWithDFS();
+        }
+        else if (algorithm == "Prim's Algorithm")
+        {
+            GenerateMazeWithPrims();
+        }
+
+        // Render the maze with individual sprites
+        RenderMaze();
+
+        // Place the goal at the top-right corner
+        PlaceGoalAtTopRight();
+
+        // Adjust the camera to fit the maze
+        AdjustCameraToFitMaze();
+    }
+
+    // Depth First Search maze generation method
+    void GenerateMazeWithDFS()
+    {
+        Debug.Log("Generating maze with DFS, size: " + width + "x" + height);
+
+        // Set all cells to walls by default
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                maze[x, y] = false; // Mark as wall
+            }
+        }
+
+        // Carve out the maze using DFS from (1,1)
+        DepthFirstSearch(1, 1);
+
+        // Ensure boundary walls are present
+        SetBoundaryWalls();
+    }
+
+    // Prim's Algorithm maze generation method
+    void GenerateMazeWithPrims()
+    {
+        Debug.Log("Generating maze with Prim's Algorithm, size: " + width + "x" + height);
+
+        // Set all cells to walls initially
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                maze[x, y] = false; // Mark as wall
+            }
+        }
+
+        // Carve out the maze using Prim's Algorithm
+        PrimAlgorithm();
+
+        // Ensure boundary walls are present
+        SetBoundaryWalls();
+    }
+
+    // Prim's Algorithm for maze generation
+    void PrimAlgorithm()
+    {
+        List<Vector2Int> wallList = new List<Vector2Int>();
+
+        // Start at (1, 1) and mark it as a path
+        maze[1, 1] = true;
+        AddAdjacentWalls(1, 1, wallList);
+
+        while (wallList.Count > 0)
+        {
+            // Pick a random wall
+            int randomIndex = Random.Range(0, wallList.Count);
+            Vector2Int wall = wallList[randomIndex];
+            wallList.RemoveAt(randomIndex);
+
+            // Ensure the wall is within bounds
+            if (!IsInBounds(wall.x, wall.y))
+                continue;
+
+            // Get neighboring cells (path candidates)
+            Vector2Int[] neighbors = GetNeighbors(wall);
+
+            if (IsValidWall(neighbors))
+            {
+                // Carve out the wall into a path
+                maze[wall.x, wall.y] = true;
+
+                // Add adjacent walls to the list
+                foreach (var neighbor in neighbors)
+                {
+                    if (!maze[neighbor.x, neighbor.y])
+                    {
+                        AddAdjacentWalls(neighbor.x, neighbor.y, wallList);
+                    }
+                }
+            }
+        }
+    }
+
+    // Helper to set boundary walls around the maze (without doubling them)
+    void SetBoundaryWalls()
+    {
+        // Top and bottom walls
+        for (int x = 0; x < width; x++)
+        {
+            maze[x, 0] = false; // Top wall
+            maze[x, height - 1] = false; // Bottom wall
+        }
+
+        // Left and right walls
+        for (int y = 0; y < height; y++)
+        {
+            maze[0, y] = false; // Left wall
+            maze[width - 1, y] = false; // Right wall
+        }
+    }
+
+    // DFS recursive carving function
+    void DepthFirstSearch(int x, int y)
+    {
+        maze[x, y] = true; // Mark current cell as walkable
+
+        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        ShuffleDirections(directions); // Shuffle directions for randomness
+
+        foreach (Vector2Int dir in directions)
+        {
+            int newX = x + dir.x * 2;
+            int newY = y + dir.y * 2;
+
+            if (IsInBounds(newX, newY) && !maze[newX, newY])
+            {
+                maze[x + dir.x, y + dir.y] = true; // Carve path
+                DepthFirstSearch(newX, newY); // Recur
+            }
+        }
+    }
+
+    // Helper function to check if wall has exactly one neighboring path
+    bool IsValidWall(Vector2Int[] neighbors)
+    {
+        int pathCount = 0;
+        foreach (var neighbor in neighbors)
+        {
+            if (IsInBounds(neighbor.x, neighbor.y) && maze[neighbor.x, neighbor.y])
+            {
+                pathCount++;
+            }
+        }
+        return pathCount == 1; // Exactly one adjacent path
+    }
+
+    // Helper function to add adjacent walls to the wall list
+    void AddAdjacentWalls(int x, int y, List<Vector2Int> wallList)
+    {
+        if (IsInBounds(x + 1, y)) wallList.Add(new Vector2Int(x + 1, y));
+        if (IsInBounds(x - 1, y)) wallList.Add(new Vector2Int(x - 1, y));
+        if (IsInBounds(x, y + 1)) wallList.Add(new Vector2Int(x, y + 1));
+        if (IsInBounds(x, y - 1)) wallList.Add(new Vector2Int(x, y - 1));
+    }
+
+    // Return neighbors of a wall
+    Vector2Int[] GetNeighbors(Vector2Int wall)
+    {
+        Vector2Int[] neighbors = new Vector2Int[2];
+        if (wall.x % 2 == 0)
+        {
+            neighbors[0] = new Vector2Int(wall.x + 1, wall.y);
+            neighbors[1] = new Vector2Int(wall.x - 1, wall.y);
         }
         else
         {
-            Debug.LogError("AgentController not found in the scene!");
+            neighbors[0] = new Vector2Int(wall.x, wall.y + 1);
+            neighbors[1] = new Vector2Int(wall.x, wall.y - 1);
         }
+        return neighbors;
     }
 
-    // Generate a maze using DFS
-    void GenerateMaze()
+    // Helper method to create a sprite at a specific position
+    void CreateSprite(Sprite sprite, Vector3 position)
     {
-        maze = new bool[width, height];
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                maze[x, y] = false;  // Set everything to walls
-            }
-        }
-
-        // Example: DFS to create a random maze
-        startPosition = new Vector2Int(1, 1);
-        goalPosition = new Vector2Int(width - 2, height - 2);
-
-        // Create a simple random maze using DFS
-        Stack<Vector2Int> stack = new Stack<Vector2Int>();
-        maze[startPosition.x, startPosition.y] = true;  // Start is walkable
-        stack.Push(startPosition);
-
-        Vector2Int[] directions = {
-            Vector2Int.up,
-            Vector2Int.down,
-            Vector2Int.left,
-            Vector2Int.right
-        };
-
-        while (stack.Count > 0)
-        {
-            Vector2Int current = stack.Pop();
-            List<Vector2Int> neighbors = new List<Vector2Int>();
-
-            // Check 2 tiles away in all directions
-            foreach (Vector2Int direction in directions)
-            {
-                Vector2Int neighbor = current + direction * 2;
-                if (IsInBounds(neighbor) && !maze[neighbor.x, neighbor.y])
-                {
-                    neighbors.Add(neighbor);
-                }
-            }
-
-            if (neighbors.Count > 0)
-            {
-                // Randomly pick a neighbor
-                stack.Push(current);
-                Vector2Int chosenNeighbor = neighbors[Random.Range(0, neighbors.Count)];
-
-                // Make the path between the current and chosen neighbor walkable
-                Vector2Int wall = current + (chosenNeighbor - current) / 2;
-                maze[wall.x, wall.y] = true;
-                maze[chosenNeighbor.x, chosenNeighbor.y] = true;
-
-                stack.Push(chosenNeighbor);
-            }
-        }
-
-        // Ensure the goal position is walkable
-        maze[goalPosition.x, goalPosition.y] = true;
+        GameObject spriteObj = new GameObject("Sprite");
+        spriteObj.transform.position = position;
+        SpriteRenderer renderer = spriteObj.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.sortingOrder = 0; // Set sorting order for correct layering
     }
 
+    // Helper function to shuffle directions
+    void ShuffleDirections(Vector2Int[] directions)
+    {
+        for (int i = 0; i < directions.Length; i++)
+        {
+            Vector2Int temp = directions[i];
+            int randomIndex = Random.Range(i, directions.Length);
+            directions[i] = directions[randomIndex];
+            directions[randomIndex] = temp;
+        }
+    }
+
+    // Check if the coordinates are within bounds
+    bool IsInBounds(int x, int y)
+    {
+        return x > 0 && x < width - 1 && y > 0 && y < height - 1;
+    }
+
+    // Place the goal at the top-right corner
+    void PlaceGoalAtTopRight()
+    {
+        Vector3 goalPosition = new Vector3(width - 2, height - 2, 0);
+        CreateSprite(goalPointSprite, goalPosition);
+    }
+
+    // Render the maze using SpriteRenderers (walls and floors)
     void RenderMaze()
     {
-        // Render the maze tiles as floor and walls
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                Vector3 position = new Vector3(x * tileScale, y * tileScale, 0);
-
+                Vector3 position = new Vector3(x, y, 0);
                 if (maze[x, y])
                 {
-                    // Floor tile (walkable)
-                    CreateSpriteObject(floorSprite, position, 0);
+                    CreateSprite(floorSprite, position);
                 }
                 else
                 {
-                    // Wall tile (not walkable)
-                    CreateSpriteObject(wallSprite, position, 0);
+                    CreateSprite(wallSprite, position);
                 }
             }
         }
-
-        // Render the goal point
-        Vector3 goalPos = new Vector3(goalPosition.x * tileScale, goalPosition.y * tileScale, 0);
-        CreateSpriteObject(goalSprite, goalPos, 1);
     }
 
-    // Helper method to create sprites in the scene
-    void CreateSpriteObject(Sprite sprite, Vector3 position, int sortingOrder)
-    {
-        GameObject obj = new GameObject("TileSprite");
-        obj.transform.position = position;
-        SpriteRenderer renderer = obj.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite;
-        renderer.sortingOrder = sortingOrder;
-    }
-
-    // Adjust the camera to fit the entire maze on screen
+    // Adjust the camera to fit the entire maze
     void AdjustCameraToFitMaze()
     {
-        Camera mainCamera = Camera.main;
-        if (mainCamera != null)
-        {
-            // Calculate the orthographic size to fit the maze's height
-            float mazeHeight = height * tileScale;
-            float mazeWidth = width * tileScale;
+        Vector3 mazeCenter = new Vector3(width / 2f, height / 2f, -10);
+        cam.transform.position = mazeCenter;
 
-            // Set the camera's orthographic size to fit the maze's height
-            mainCamera.orthographicSize = mazeHeight / 2f;
+        float aspectRatio = (float)Screen.width / (float)Screen.height;
+        float verticalSize = height / 2f;
+        float horizontalSize = (width / 2f) / aspectRatio;
 
-            // Calculate the aspect ratio to ensure the width fits as well
-            float screenAspect = (float)Screen.width / (float)Screen.height;
-            float cameraWidth = mainCamera.orthographicSize * screenAspect;
-
-            // Adjust orthographic size to fit the width if needed
-            if (cameraWidth < mazeWidth / 2f)
-            {
-                mainCamera.orthographicSize = (mazeWidth / 2f) / screenAspect;
-            }
-
-            // Center the camera on the maze
-            mainCamera.transform.position = new Vector3((width / 2f) * tileScale, (height / 2f) * tileScale, -10f);
-        }
-    }
-
-    // Check if a position is within bounds of the maze
-    bool IsInBounds(Vector2Int pos)
-    {
-        return pos.x > 0 && pos.x < width - 1 && pos.y > 0 && pos.y < height - 1;
+        cam.orthographicSize = Mathf.Max(verticalSize, horizontalSize);
     }
 }

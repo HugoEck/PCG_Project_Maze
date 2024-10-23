@@ -564,12 +564,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc8c5f15471938e48be1ae540b005bee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 50
-  height: 50
-  wallSprite: {fileID: -358539965, guid: f8042a83906d4814483380dd29fed7be, type: 3}
-  floorSprite: {fileID: -1824940073, guid: 2de5b7195269d664e9a646c569ca682d, type: 3}
-  goalSprite: {fileID: 1070938620, guid: f8042a83906d4814483380dd29fed7be, type: 3}
-  tileScale: 1
+  wallSprite: {fileID: 324310427, guid: f8042a83906d4814483380dd29fed7be, type: 3}
+  floorSprite: {fileID: 591141985, guid: f8042a83906d4814483380dd29fed7be, type: 3}
+  agentSprite: {fileID: -260757528, guid: f8042a83906d4814483380dd29fed7be, type: 3}
+  goalPointSprite: {fileID: 1070938620, guid: f8042a83906d4814483380dd29fed7be, type: 3}
+  agentObject: {fileID: 1459610303}
 --- !u!1 &1347874008
 GameObject:
   m_ObjectHideFlags: 0
@@ -755,8 +754,8 @@ MonoBehaviour:
   agentSprite: {fileID: 599091281, guid: f8042a83906d4814483380dd29fed7be, type: 3}
   trailSprite: {fileID: -1148001255, guid: f8042a83906d4814483380dd29fed7be, type: 3}
   tileScale: 1
-  moveDelay: 0.1
-  uiController: {fileID: 0}
+  moveDelay: 0.05
+  uiController: {fileID: 464249956}
 --- !u!1 &1586628492
 GameObject:
   m_ObjectHideFlags: 0
