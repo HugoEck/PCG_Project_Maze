@@ -16,6 +16,9 @@ public class AgentController : MonoBehaviour
 
     private GameObject agentObj;      // The GameObject for the agent
 
+    public UIController uiController;  // Reference to the UIController for the game over UI
+    private Coroutine dfsCoroutine;   // Reference to the DFS coroutine to stop it on reset
+
     void Start()
     {
         // Initialize the agent's start position
@@ -38,7 +41,13 @@ public class AgentController : MonoBehaviour
 
         // Start the DFS movement after initialization
         Vector2Int startPosition = new Vector2Int(1, 1);  // Starting from (1,1)
-        StartCoroutine(MoveAgentDFS(startPosition));  // Start DFS movement
+
+        // Start the DFS coroutine and store the reference to stop it if needed
+        if (dfsCoroutine != null)
+        {
+            StopCoroutine(dfsCoroutine);  // Stop the previous coroutine if it's running
+        }
+        dfsCoroutine = StartCoroutine(MoveAgentDFS(startPosition));  // Start DFS movement
     }
 
     // DFS movement through the maze
@@ -84,6 +93,7 @@ public class AgentController : MonoBehaviour
             if (currentPosition == goalPosition)
             {
                 Debug.Log("Goal Reached!");
+                uiController.ShowGameOverScreen();  // Show the game over screen
                 yield break;
             }
         }

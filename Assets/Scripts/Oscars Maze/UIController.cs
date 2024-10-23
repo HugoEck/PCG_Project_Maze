@@ -1,14 +1,13 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;  // If using TextMeshPro
 using UnityEngine.SceneManagement;
 
 public class UIController : MonoBehaviour
 {
-    public Text timerText;         // Reference to the timer text (UI Text component)
-    public GameObject gameOverPanel;  // Reference to the GameOver panel to enable/disable
-    private float elapsedTime;      // Tracks the time taken to reach the goal
-    private bool isTimerRunning;    // Whether the timer is running or not
+    public TextMeshProUGUI timerText;  // Reference to the timer text (UI Text component)
+    public GameObject gameOverPanel;   // Reference to the GameOver panel to enable/disable
+    private float elapsedTime;         // Tracks the time taken to reach the goal
+    private bool isTimerRunning;       // Whether the timer is running or not
 
     void Start()
     {
