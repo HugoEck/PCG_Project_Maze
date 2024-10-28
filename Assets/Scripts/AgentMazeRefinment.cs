@@ -15,28 +15,39 @@ public class AgentMazeRefinement : MonoBehaviour
     public int height = 10; // Maze height
 
     public int numAgents = 3;  // Number of agents to refine the maze
-    public int agentSteps = 50;  // Number of steps each agent will take
     public float stepDelay = 0.001f; // Delay between each agent step for animation
     private Vector2 startPos;
     private Vector2 goalPos;
 
-    private List<GameObject> agentObjects = new List<GameObject>(); // List to keep track of agent objects
+    private List<Vector2Int> deadEnds = new List<Vector2Int>(); // List to store dead ends
 
     void Start()
     {
-        // Assuming the DFS-generated maze is already created (replace with your generation code)
         maze = new int[width, height];
         GenerateMazeUsingDFS();
         DrawMaze();
 
-        // Start the agent-based maze refinement with animation
-        StartCoroutine(RefineMazeWithAgentsAnimated());
+        // Identify dead ends after DFS generation
+        IdentifyDeadEnds();
+
+        // Shuffle dead ends to randomize the selection
+        ShuffleDeadEnds();
+
+        SetStartAndGoal();
+
+        // Remove the goal position from the list, if it somehow exists there
+        deadEnds.Remove(new Vector2Int((int)startPos.x, (int)startPos.y));
+
+        // Remove the goal position from the list, if it somehow exists there
+        deadEnds.Remove(new Vector2Int((int)goalPos.x, (int)goalPos.y));
+
+        // Assign each agent a dead end and close it
+        StartCoroutine(AssignAgentsToCloseDeadEnds());
     }
 
-    // Maze generation using DFS (placeholder - you can replace this with your DFS generation code)
+    // Maze generation using DFS (placeholder)
     void GenerateMazeUsingDFS()
     {
-        // Fill the maze array with walls (0) and paths (1)
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -45,14 +56,13 @@ public class AgentMazeRefinement : MonoBehaviour
             }
         }
 
-        // Carve out the maze using DFS (this is a placeholder, replace with your DFS code)
         RecursiveDFS(1, 1);
     }
 
-    // Recursive DFS algorithm (as before)
+    // Recursive DFS algorithm for maze generation
     void RecursiveDFS(int x, int y)
     {
-        maze[x, y] = 1;  // Mark cell as part of the path
+        maze[x, y] = 1;
         int[] directions = { 1, 2, 3, 4 };
         ShuffleArray(directions);
         foreach (int direction in directions)
@@ -91,127 +101,95 @@ public class AgentMazeRefinement : MonoBehaviour
         }
     }
 
-    // Set start and goal positions
-    void SetStartAndGoal()
+    // Identify all dead ends in the maze
+    void IdentifyDeadEnds()
     {
-        // Set start position in the lower-left corner
-        startPos = new Vector2(1, 1);
-
-        // Set goal position in the upper-right corner
-        goalPos = new Vector2(width - 3, height - 3);
-
-        // Ensure both start and goal are on paths
-        maze[(int)startPos.x, (int)startPos.y] = 1;
-        maze[(int)goalPos.x, (int)goalPos.y] = 1;
-
-        // Instantiate start and goal prefabs
-        Instantiate(startPrefab, new Vector2(startPos.x, startPos.y), Quaternion.identity, transform);
-        Instantiate(goalPrefab, new Vector2(goalPos.x, goalPos.y), Quaternion.identity, transform);
-    }
-
-    // Coroutine to animate agent-based maze refinement
-    IEnumerator RefineMazeWithAgentsAnimated()
-    {
-        for (int i = 0; i < numAgents; i++)
+        for (int x = 1; x < width - 1; x++)
         {
-            // Each agent starts at a random point
-            Vector2Int agentPos = new Vector2Int(Random.Range(1, width - 2), Random.Range(1, height - 2));
-
-            // Create a visual agent prefab to follow the agent
-            GameObject agentObj = Instantiate(agentPrefab, new Vector2(agentPos.x, agentPos.y), Quaternion.identity);
-            agentObjects.Add(agentObj); // Keep track of the agent object
-
-            // Each agent takes a number of steps
-            for (int j = 0; j < agentSteps; j++)
+            for (int y = 1; y < height - 1; y++)
             {
-                // Get a random neighboring position
-                Vector2Int nextPos = GetRandomNeighbor(agentPos);
+                Vector2Int pos = new Vector2Int(x, y);
 
-                // Modify the maze at the current agent's position intelligently
-                ModifyMazeIntelligently(agentPos, nextPos);
-
-                // Move the visual agent to the new position
-                agentObj.transform.position = new Vector2(nextPos.x, nextPos.y);
-
-                // Wait for a short delay before the next step
-                yield return new WaitForSeconds(stepDelay);
-
-                // Move agent to the next position
-                agentPos = nextPos;
-
-                // Redraw the maze to reflect the modification
-                DrawMaze();
+                // Exclude the start and goal positions from the dead ends
+                if (maze[x, y] == 1 && IsDeadEnd(pos) && pos != new Vector2Int((int)startPos.x, (int)startPos.y) && pos != new Vector2Int((int)goalPos.x, (int)goalPos.y))
+                {
+                    deadEnds.Add(pos);
+                }
             }
         }
+    }
+
+    // Coroutine to assign agents to close dead ends
+    IEnumerator AssignAgentsToCloseDeadEnds()
+    {
+        int assignedAgents = Mathf.Min(numAgents, deadEnds.Count);
+
+        for (int i = 0; i < assignedAgents; i++)
+        {
+            Vector2Int deadEndPos = deadEnds[i];
+            GameObject agentObj = Instantiate(agentPrefab, new Vector2(deadEndPos.x, deadEndPos.y), Quaternion.identity);
+
+            yield return StartCoroutine(CloseDeadEnd(deadEndPos, agentObj));
+            Destroy(agentObj);  // Remove the agent object after closing the dead end
+        }
+
         SetStartAndGoal();
     }
 
-    // Get a random neighboring position for the agent to move to
-    Vector2Int GetRandomNeighbor(Vector2Int pos)
+    // Coroutine to close a dead end by filling it with walls
+    IEnumerator CloseDeadEnd(Vector2Int startPos, GameObject agentObj)
+    {
+        Vector2Int currentPos = startPos;
+
+        while (IsDeadEnd(currentPos))
+        {
+            maze[currentPos.x, currentPos.y] = 0;  // Turn path into a wall
+            DrawMaze();  // Update the visual maze
+
+            // Move the visual agent to the current position
+            agentObj.transform.position = new Vector2(currentPos.x, currentPos.y);
+            yield return new WaitForSeconds(stepDelay);
+
+            // Move to the next tile in the dead end
+            currentPos = GetNextInDeadEnd(currentPos);
+            if (currentPos == Vector2Int.zero) break;  // Stop if no valid next step is found
+        }
+    }
+
+    // Find the next tile in a dead end path (returns Vector2Int.zero if no valid next step)
+    Vector2Int GetNextInDeadEnd(Vector2Int pos)
     {
         List<Vector2Int> neighbors = new List<Vector2Int>();
 
-        // Ensure neighbors are within bounds
-        if (pos.x > 1) neighbors.Add(new Vector2Int(pos.x - 1, pos.y));  // Left
-        if (pos.x < width - 2) neighbors.Add(new Vector2Int(pos.x + 1, pos.y));  // Right
-        if (pos.y > 1) neighbors.Add(new Vector2Int(pos.x, pos.y - 1));  // Down
-        if (pos.y < height - 2) neighbors.Add(new Vector2Int(pos.x, pos.y + 1));  // Up
+        if (pos.x > 1 && maze[pos.x - 1, pos.y] == 1) neighbors.Add(new Vector2Int(pos.x - 1, pos.y));
+        if (pos.x < width - 2 && maze[pos.x + 1, pos.y] == 1) neighbors.Add(new Vector2Int(pos.x + 1, pos.y));
+        if (pos.y > 1 && maze[pos.x, pos.y - 1] == 1) neighbors.Add(new Vector2Int(pos.x, pos.y - 1));
+        if (pos.y < height - 2 && maze[pos.x, pos.y + 1] == 1) neighbors.Add(new Vector2Int(pos.x, pos.y + 1));
 
-        // Pick a random neighbor
-        return neighbors[Random.Range(0, neighbors.Count)];
-    }
-
-    // Intelligently modify the maze at the agent's current and next position
-    void ModifyMazeIntelligently(Vector2Int currentPos, Vector2Int nextPos)
-    {
-        // If nextPos is a wall, carve it into a path
-        if (maze[nextPos.x, nextPos.y] == 0)
-        {
-            maze[nextPos.x, nextPos.y] = 1;  // Carve path
-        }
-        else
-        {
-            // Purposefully close the path (create a dead end) with a certain probability
-            if (IsDeadEnd(currentPos) && Random.value > 0.7f)
-            {
-                maze[nextPos.x, nextPos.y] = 0;  // Create a wall, making it a dead end
-            }
-            // Purposefully connect to create loops if there are enough nearby paths
-            else if (IsNearAnotherPath(nextPos) && Random.value > 0.5f)
-            {
-                maze[nextPos.x, nextPos.y] = 1;  // Create a loop by connecting paths
-            }
-        }
+        return neighbors.Count == 1 ? neighbors[0] : Vector2Int.zero;
     }
 
     // Check if the current position is a dead end
     bool IsDeadEnd(Vector2Int pos)
     {
         int pathCount = 0;
-
-        // Check all 4 neighbors (up, down, left, right)
         if (pos.x > 1 && maze[pos.x - 1, pos.y] == 1) pathCount++;
         if (pos.x < width - 2 && maze[pos.x + 1, pos.y] == 1) pathCount++;
         if (pos.y > 1 && maze[pos.x, pos.y - 1] == 1) pathCount++;
         if (pos.y < height - 2 && maze[pos.x, pos.y + 1] == 1) pathCount++;
 
-        // If only one neighboring path, it is a dead end
         return pathCount == 1;
     }
 
-    // Check if the next position is near another path (for creating loops)
-    bool IsNearAnotherPath(Vector2Int pos)
+    // Set start and goal positions
+    void SetStartAndGoal()
     {
-        int pathCount = 0;
-
-        // Check all 4 neighbors (up, down, left, right)
-        if (pos.x > 1 && maze[pos.x - 1, pos.y] == 1) pathCount++;
-        if (pos.x < width - 2 && maze[pos.x + 1, pos.y] == 1) pathCount++;
-        if (pos.y > 1 && maze[pos.x, pos.y - 1] == 1) pathCount++;
-        if (pos.y < height - 2 && maze[pos.x, pos.y + 1] == 1) pathCount++;
-
-        // If there are 2 or more paths nearby, it’s a good candidate for creating a loop
-        return pathCount >= 2;
+        startPos = new Vector2(1, 1);
+        goalPos = new Vector2(width - 3, height - 3);
+        maze[(int)startPos.x, (int)startPos.y] = 1;
+        maze[(int)goalPos.x, (int)goalPos.y] = 1;
+        Instantiate(startPrefab, new Vector2(startPos.x, startPos.y), Quaternion.identity, transform);
+        Instantiate(goalPrefab, new Vector2(goalPos.x, goalPos.y), Quaternion.identity, transform);
     }
 
     // Draw the maze using wall and floor prefabs
@@ -219,7 +197,7 @@ public class AgentMazeRefinement : MonoBehaviour
     {
         foreach (Transform child in transform)
         {
-            Destroy(child.gameObject); // Clear the old maze
+            Destroy(child.gameObject);
         }
 
         for (int x = 0; x < width; x++)
@@ -228,11 +206,11 @@ public class AgentMazeRefinement : MonoBehaviour
             {
                 if (maze[x, y] == 0)
                 {
-                    Instantiate(wallPrefab, new Vector2(x, y), Quaternion.identity, transform);  // Wall
+                    Instantiate(wallPrefab, new Vector2(x, y), Quaternion.identity, transform);
                 }
                 else
                 {
-                    Instantiate(floorPrefab, new Vector2(x, y), Quaternion.identity, transform);  // Path
+                    Instantiate(floorPrefab, new Vector2(x, y), Quaternion.identity, transform);
                 }
             }
         }
@@ -247,6 +225,17 @@ public class AgentMazeRefinement : MonoBehaviour
             int temp = array[i];
             array[i] = array[randomIndex];
             array[randomIndex] = temp;
+        }
+    }
+
+    void ShuffleDeadEnds()
+    {
+        for (int i = deadEnds.Count - 1; i > 0; i--)
+        {
+            int randomIndex = Random.Range(0, i + 1);
+            Vector2Int temp = deadEnds[i];
+            deadEnds[i] = deadEnds[randomIndex];
+            deadEnds[randomIndex] = temp;
         }
     }
 }

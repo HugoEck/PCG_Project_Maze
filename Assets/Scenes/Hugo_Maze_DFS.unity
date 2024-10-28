@@ -393,8 +393,7 @@ MonoBehaviour:
   goalPrefab: {fileID: 3016908579655318593, guid: 559719cea6992624885f9e37e47d253b, type: 3}
   width: 50
   height: 50
-  numAgents: 3
-  agentSteps: 100
+  numAgents: 20
   stepDelay: 0.01
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
