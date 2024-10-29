@@ -4,21 +4,21 @@ using UnityEngine;
 
 public class MazeManager : MonoBehaviour
 {
-    public enum MazeAlgorithm { DFS, Kruskal }
+    public enum MazeAlgorithm { DFS, Kruskal, Prim }
     public MazeAlgorithm selectedAlgorithm;
     private IMazeGenerator mazeGenerator;
 
     public GameObject wallPrefab;
     public GameObject floorPrefab;
-    public GameObject startPrefab;  // Prefab for start marker
-    public GameObject goalPrefab;   // Prefab for goal marker
+    public GameObject startPrefab;
+    public GameObject goalPrefab;
 
     private int[,] maze;
     private Vector2Int startPos;
     private Vector2Int goalPos;
 
-    public int width = 10;
-    public int height = 10;
+    public int width;
+    public int height;
 
     private static MazeManager instance;
     public static MazeManager Instance => instance;
@@ -31,6 +31,7 @@ public class MazeManager : MonoBehaviour
 
     void Start()
     {
+        // Generate the maze and configure start and goal
         switch (selectedAlgorithm)
         {
             case MazeAlgorithm.DFS:
@@ -39,11 +40,14 @@ public class MazeManager : MonoBehaviour
             case MazeAlgorithm.Kruskal:
                 mazeGenerator = gameObject.AddComponent<KruskalMazeGenerator>();
                 break;
+            case MazeAlgorithm.Prim:
+                mazeGenerator = gameObject.AddComponent<PrimMazeGenerator>();
+                break;
         }
 
         maze = mazeGenerator.GenerateMaze(width, height);
         startPos = new Vector2Int(1, 1);
-        goalPos = new Vector2Int(width - 2, height - 2);
+        goalPos = new Vector2Int(width - 3, height - 3);
 
         AgentMazeRefinement agentRefinement = GetComponent<AgentMazeRefinement>();
         if (agentRefinement != null)
@@ -51,19 +55,38 @@ public class MazeManager : MonoBehaviour
             agentRefinement.InitializeWithMazeData(maze, startPos, goalPos, width, height);
         }
 
-        UpdateVisualMaze(maze);  // Draw initial maze
+        UpdateVisualMaze(maze);
+        PlaceStartAndGoal();
+        AdjustCameraToFitMaze();  // Ensure camera shows the whole maze
+    }
+
+    private void AdjustCameraToFitMaze()
+    {
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null) return;
+
+        // Calculate the center of the maze
+        Vector3 mazeCenter = new Vector3(width / 1f - 0.5f, height / 2f - 0.5f, -10);
+
+        // Set camera position to the maze center
+        mainCamera.transform.position = mazeCenter;
+
+        // Adjust the orthographic size based on maze dimensions
+        float aspectRatio = (float)Screen.width / Screen.height;
+        float verticalSize = height / 2f + 1; // Add some padding
+        float horizontalSize = (width / 2f + 1) / aspectRatio;
+
+        mainCamera.orthographicSize = Mathf.Max(verticalSize, horizontalSize);
     }
 
     public void PlaceStartAndGoal()
     {
-        // Instantiate start and goal prefabs at their respective positions
         Instantiate(startPrefab, new Vector3(startPos.x, startPos.y, 0), Quaternion.identity, transform);
         Instantiate(goalPrefab, new Vector3(goalPos.x, goalPos.y, 0), Quaternion.identity, transform);
 
         Debug.Log("Start and Goal have been placed.");
     }
 
-    // Method to update the maze visuals
     public void UpdateVisualMaze(int[,] maze)
     {
         foreach (Transform child in transform)

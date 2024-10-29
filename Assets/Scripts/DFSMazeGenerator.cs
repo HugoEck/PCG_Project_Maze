@@ -15,7 +15,7 @@ public class DFSMazeGenerator : MonoBehaviour, IMazeGenerator
         RecursiveDFS(1, 1);
 
         startPos = new Vector2Int(1, 1);
-        goalPos = new Vector2Int(width - 2, height - 2);
+        goalPos = new Vector2Int(width - 3, height - 3);
 
         return maze;
     }
