@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class DFSMazeGenerator : MonoBehaviour
+public class ScottDFSMazeGenerator : MonoBehaviour
 {
     public int width = 10;
     public int height = 10;
