@@ -358,7 +358,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1317421385
 Transform:
   m_ObjectHideFlags: 0
@@ -386,10 +386,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 540578e794ef1514b92c6add854739e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 100
-  height: 100
+  width: 25
+  height: 25
   wallPrefab: {fileID: 2578954439767863642, guid: bf78978874867964f987b6d4a39f0889, type: 3}
-  pathPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
+  floorPrefab: {fileID: 6652955654351153951, guid: 70c3f37f6e7232e4aad3546edc031210, type: 3}
+  initialPathPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
+  updatedPathPrefab: {fileID: 1990802133463292047, guid: ed6b41e0a58f74c4988eb5b20f5b5587, type: 3}
+  agentPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
+  generationDelay: 0.005
+  agentDelay: 0.4
+  deadEndsToOpen: 25
 --- !u!1 &1632831184
 GameObject:
   m_ObjectHideFlags: 0
@@ -406,7 +412,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1632831185
 MonoBehaviour:
   m_ObjectHideFlags: 0
