@@ -6,23 +6,31 @@ public class AgentMazeRefinement : MonoBehaviour
 {
     public GameObject agentPrefab;
 
-    private DFSMazeGenerator mazeGenerator;
     private int[,] maze;
     public int numAgents = 3;
     public float stepDelay = 0.001f;
     private Vector2Int startPos;
     private Vector2Int goalPos;
+    private int width;
+    private int height;
 
     private List<Vector2Int> deadEnds = new List<Vector2Int>();
 
-    void Start()
+    // Method to initialize maze data from MazeManager
+    public void InitializeWithMazeData(int[,] maze, Vector2Int start, Vector2Int goal, int width, int height)
     {
-        mazeGenerator = FindObjectOfType<DFSMazeGenerator>();
+        // Check for null references before assigning values
+        if (maze == null)
+        {
+            Debug.LogError("Maze data is null in AgentMazeRefinement.");
+            return;
+        }
 
-        // Access the generated maze and start/goal positions
-        maze = mazeGenerator.maze;
-        startPos = mazeGenerator.startPos;
-        goalPos = mazeGenerator.goalPos;
+        this.maze = maze;
+        this.startPos = start;
+        this.goalPos = goal;
+        this.width = width;
+        this.height = height;
 
         IdentifyDeadEnds();
 
@@ -33,25 +41,42 @@ public class AgentMazeRefinement : MonoBehaviour
         deadEnds.Remove(startPos);
         deadEnds.Remove(goalPos);
 
-        // Assign each agent a dead end and close it
+        // Start the refinement process
         StartCoroutine(AssignAgentsToCloseDeadEnds());
     }
 
     // Identify all dead ends in the maze
     void IdentifyDeadEnds()
     {
-        for (int x = 1; x < mazeGenerator.width - 1; x++)
+        // Prevent null reference errors
+        if (maze == null)
         {
-            for (int y = 1; y < mazeGenerator.height - 1; y++)
+            Debug.LogError("Maze not initialized in IdentifyDeadEnds.");
+            return;
+        }
+
+        for (int x = 1; x < width - 1; x++)
+        {
+            for (int y = 1; y < height - 1; y++)
             {
                 Vector2Int pos = new Vector2Int(x, y);
 
-                if (maze[x, y] == 1 && IsDeadEnd(pos) && pos != startPos && pos != goalPos)
+                // Identify dead ends (path cells with only one neighbor) and add to deadEnds list
+                if (maze[x, y] == 1 && IsDeadEnd(pos))
                 {
                     deadEnds.Add(pos);
                 }
             }
         }
+
+        // Ensure startPos and goalPos are not in the list of dead ends to fill
+        deadEnds.Remove(startPos);
+        deadEnds.Remove(goalPos);
+
+        // Log the list of dead ends, start, and goal for debugging
+        Debug.Log($"Dead Ends Count: {deadEnds.Count}");
+        Debug.Log($"Start Position: {startPos}");
+        Debug.Log($"Goal Position: {goalPos}");
     }
 
     // Coroutine to assign agents to close dead ends
@@ -67,7 +92,9 @@ public class AgentMazeRefinement : MonoBehaviour
             yield return StartCoroutine(CloseDeadEnd(deadEndPos, agentObj));
             Destroy(agentObj);
         }
-        mazeGenerator.SetStartAndGoal();
+
+        // Once agents are done, place the start and goal markers
+        MazeManager.Instance.PlaceStartAndGoal();
     }
 
     // Coroutine to close a dead end by filling it with walls
@@ -78,7 +105,7 @@ public class AgentMazeRefinement : MonoBehaviour
         while (IsDeadEnd(currentPos))
         {
             maze[currentPos.x, currentPos.y] = 0;
-            mazeGenerator.DrawMaze();  // Update the visual maze
+            MazeManager.Instance.UpdateVisualMaze(maze);  // Update the visual maze through MazeManager
 
             agentObj.transform.position = new Vector2(currentPos.x, currentPos.y);
             yield return new WaitForSeconds(stepDelay);
@@ -94,9 +121,9 @@ public class AgentMazeRefinement : MonoBehaviour
         List<Vector2Int> neighbors = new List<Vector2Int>();
 
         if (pos.x > 1 && maze[pos.x - 1, pos.y] == 1) neighbors.Add(new Vector2Int(pos.x - 1, pos.y));
-        if (pos.x < mazeGenerator.width - 2 && maze[pos.x + 1, pos.y] == 1) neighbors.Add(new Vector2Int(pos.x + 1, pos.y));
+        if (pos.x < width - 2 && maze[pos.x + 1, pos.y] == 1) neighbors.Add(new Vector2Int(pos.x + 1, pos.y));
         if (pos.y > 1 && maze[pos.x, pos.y - 1] == 1) neighbors.Add(new Vector2Int(pos.x, pos.y - 1));
-        if (pos.y < mazeGenerator.height - 2 && maze[pos.x, pos.y + 1] == 1) neighbors.Add(new Vector2Int(pos.x, pos.y + 1));
+        if (pos.y < height - 2 && maze[pos.x, pos.y + 1] == 1) neighbors.Add(new Vector2Int(pos.x, pos.y + 1));
 
         return neighbors.Count == 1 ? neighbors[0] : Vector2Int.zero;
     }
@@ -106,23 +133,12 @@ public class AgentMazeRefinement : MonoBehaviour
     {
         int pathCount = 0;
         if (pos.x > 1 && maze[pos.x - 1, pos.y] == 1) pathCount++;
-        if (pos.x < mazeGenerator.width - 2 && maze[pos.x + 1, pos.y] == 1) pathCount++;
+        if (pos.x < width - 2 && maze[pos.x + 1, pos.y] == 1) pathCount++;
         if (pos.y > 1 && maze[pos.x, pos.y - 1] == 1) pathCount++;
-        if (pos.y < mazeGenerator.height - 2 && maze[pos.x, pos.y + 1] == 1) pathCount++;
+        if (pos.y < height - 2 && maze[pos.x, pos.y + 1] == 1) pathCount++;
 
         return pathCount == 1;
     }
-
-    //// Set start and goal positions
-    //void SetStartAndGoal()
-    //{
-    //    startPos = new Vector2(1, 1);
-    //    goalPos = new Vector2(mazeGenerator.width - 3, mazeGenerator.height - 3);
-    //    maze[(int)startPos.x, (int)startPos.y] = 1;
-    //    maze[(int)goalPos.x, (int)goalPos.y] = 1;
-    //    Instantiate(startPrefab, new Vector2(startPos.x, startPos.y), Quaternion.identity, transform);
-    //    Instantiate(goalPrefab, new Vector2(goalPos.x, goalPos.y), Quaternion.identity, transform);
-    //}
 
     // Shuffle the dead ends
     void ShuffleDeadEnds()
