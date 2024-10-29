@@ -1,60 +1,48 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class DFSMazeGenerator : MonoBehaviour
 {
-    public int width = 10;  // Width of the maze
-    public int height = 10; // Height of the maze
-    public GameObject wallPrefab;  // Wall prefab
-    public GameObject floorPrefab;  // Floor prefab
-    public GameObject startPrefab;  // Start point prefab
-    public GameObject goalPrefab;   // Goal point prefab
+    public int width = 10;  // Maze width
+    public int height = 10; // Maze height
+    public int[,] maze;     // Maze array
 
-    private int[,] maze;  // Maze array (0 for walls, 1 for paths)
-    private Vector2 startPos;
-    private Vector2 goalPos;
+    public GameObject wallPrefab;
+    public GameObject floorPrefab;
+    public GameObject startPrefab;
+    public GameObject goalPrefab;
+
+    public Vector2Int startPos { get; private set; }  // Start position
+    public Vector2Int goalPos { get; private set; }   // Goal position
 
     void Start()
     {
         GenerateMaze();
-        DrawMaze();
         SetStartAndGoal();
+        DrawMaze();
     }
 
-    // Generate the maze using DFS
-    void GenerateMaze()
+    // Generates the maze using DFS
+    private void GenerateMaze()
     {
         maze = new int[width, height];
 
-        // Initialize all cells as walls (0)
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                maze[x, y] = 0;  // Mark cell as wall
+                maze[x, y] = 0;
             }
         }
 
-        // Start DFS from a random point (or fixed point like (1,1))
         RecursiveDFS(1, 1);
-
-        // Ensure the outer boundary is walls
-        for (int x = 0; x < width; x++)
-        {
-            maze[x, 0] = maze[x, height - 1] = 0;  // Top and bottom walls
-        }
-        for (int y = 0; y < height; y++)
-        {
-            maze[0, y] = maze[width - 1, y] = 0;  // Left and right walls
-        }
     }
 
-    // Recursive DFS method to generate the maze
-    void RecursiveDFS(int x, int y)
+    // Recursive DFS algorithm for maze generation
+    private void RecursiveDFS(int x, int y)
     {
-        maze[x, y] = 1;  // Mark current cell as path
-
-        // Randomize directions for more randomness in maze generation
+        maze[x, y] = 1;
         int[] directions = { 1, 2, 3, 4 };
         ShuffleArray(directions);
 
@@ -62,28 +50,28 @@ public class DFSMazeGenerator : MonoBehaviour
         {
             switch (direction)
             {
-                case 1:  // Up
+                case 1: // Up
                     if (y - 2 > 0 && maze[x, y - 2] == 0)
                     {
-                        maze[x, y - 1] = 1;  // Carve path
+                        maze[x, y - 1] = 1;
                         RecursiveDFS(x, y - 2);
                     }
                     break;
-                case 2:  // Down
+                case 2: // Down
                     if (y + 2 < height - 1 && maze[x, y + 2] == 0)
                     {
                         maze[x, y + 1] = 1;
                         RecursiveDFS(x, y + 2);
                     }
                     break;
-                case 3:  // Left
+                case 3: // Left
                     if (x - 2 > 0 && maze[x - 2, y] == 0)
                     {
                         maze[x - 1, y] = 1;
                         RecursiveDFS(x - 2, y);
                     }
                     break;
-                case 4:  // Right
+                case 4: // Right
                     if (x + 2 < width - 1 && maze[x + 2, y] == 0)
                     {
                         maze[x + 1, y] = 1;
@@ -94,47 +82,43 @@ public class DFSMazeGenerator : MonoBehaviour
         }
     }
 
-    // Set start and goal positions
-    void SetStartAndGoal()
+    // Set start and goal positions within the maze
+    public void SetStartAndGoal()
     {
-        // Set start position in the lower-left corner
-        startPos = new Vector2(1, 1);
+        startPos = new Vector2Int(1, 1);
+        goalPos = new Vector2Int(width - 3, height - 3);
 
-        // Set goal position in the upper-right corner
-        goalPos = new Vector2(width - 3, height - 3);
-
-        // Ensure both start and goal are on paths
-        maze[(int)startPos.x, (int)startPos.y] = 1;
-        maze[(int)goalPos.x, (int)goalPos.y] = 1;
+        // Ensure start and goal are set as paths
+        maze[startPos.x, startPos.y] = 1;
+        maze[goalPos.x, goalPos.y] = 1;
 
         // Instantiate start and goal prefabs
         Instantiate(startPrefab, new Vector2(startPos.x, startPos.y), Quaternion.identity, transform);
         Instantiate(goalPrefab, new Vector2(goalPos.x, goalPos.y), Quaternion.identity, transform);
+        Debug.Log($"Start instantiated at: {startPos}, GameObject: {startPrefab}");
+        Debug.Log($"Goal instantiated at: {goalPos}, GameObject: {goalPrefab}");
     }
 
-    // Draw the maze using the wall and floor prefabs
-    void DrawMaze()
+    // Draw the maze using wall and floor prefabs
+    public void DrawMaze()
     {
+        foreach (Transform child in transform)
+        {
+            Destroy(child.gameObject);
+        }
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                if (maze[x, y] == 0)
-                {
-                    // Instantiate wall prefab at the wall position
-                    Instantiate(wallPrefab, new Vector2(x, y), Quaternion.identity, transform);
-                }
-                else
-                {
-                    // Instantiate floor prefab at the path position
-                    Instantiate(floorPrefab, new Vector2(x, y), Quaternion.identity, transform);
-                }
+                GameObject prefab = maze[x, y] == 1 ? floorPrefab : wallPrefab;
+                Instantiate(prefab, new Vector2(x, y), Quaternion.identity, transform);
             }
         }
     }
 
-    // Shuffle an array (used for randomizing directions)
-    void ShuffleArray(int[] array)
+    // Shuffle the directions array
+    private void ShuffleArray(int[] array)
     {
         for (int i = array.Length - 1; i > 0; i--)
         {
