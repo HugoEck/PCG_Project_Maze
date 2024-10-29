@@ -425,7 +425,9 @@ MonoBehaviour:
   floorPrefab: {fileID: 6652955654351153951, guid: 70c3f37f6e7232e4aad3546edc031210, type: 3}
   initialPathPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
   updatedPathPrefab: {fileID: 1990802133463292047, guid: ed6b41e0a58f74c4988eb5b20f5b5587, type: 3}
+  agentPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
   generationDelay: 0.0005
+  agentDelay: 0.5
   deadEndsToOpen: 25
 --- !u!4 &1632831186
 Transform:

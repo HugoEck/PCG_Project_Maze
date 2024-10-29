@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
 
@@ -10,28 +9,27 @@ public class MazeGenerator : MonoBehaviour
     public int height = 10;
     public GameObject wallPrefab;
     public GameObject floorPrefab;
-    public GameObject initialPathPrefab; // To show the solution path
-    public GameObject updatedPathPrefab; // To show the solution path
+    public GameObject initialPathPrefab;
+    public GameObject updatedPathPrefab;
+    public GameObject agentPrefab;
 
-    public float generationDelay = 0.1f; // Delay to visualize maze generation
+    public float generationDelay = 0.1f;
+    public float agentDelay = 0.1f;
+    [SerializeField] private int deadEndsToOpen = 0;
 
     private int[,] maze;
     private bool[,] visited;
     private List<Vector2> initialSolutionPath = new List<Vector2>();
     private List<Vector2> updatedSolutionPath = new List<Vector2>();
 
-    [SerializeField] private int deadEndsToOpen = 0;
-
     void Start()
     {
-        // Se till att bredd och höjd är udda nummer för att undvika oönskade mönster
         if (width % 2 == 0) width++;
         if (height % 2 == 0) height++;
 
         maze = new int[width, height];
         visited = new bool[width, height];
 
-        // Starta labyrintgenerering som en coroutine
         StartCoroutine(GenerateMaze());
     }
 
@@ -40,25 +38,23 @@ public class MazeGenerator : MonoBehaviour
         yield return StartCoroutine(RecursiveBacktrack(1, 1));
         DrawFullMaze();
 
-        // Solve and time the initial solution
-        float startInitialTime = Time.realtimeSinceStartup;
-        if (SolveMaze(1, 1, initialSolutionPath))
+        // Solve and count tiles for the initial solution
+        int initialTileCount = SolveMazeBFS(1, 1, initialSolutionPath);
+        if (initialTileCount > 0)
         {
-            float endInitialTime = Time.realtimeSinceStartup;
-            UnityEngine.Debug.Log("Initial Solution Time: " + (endInitialTime - startInitialTime) * 1000 + " ms");
+            UnityEngine.Debug.Log("Initial Solution Tile Count: " + initialTileCount);
             DrawInitialSolution();
         }
 
         // Open dead ends with delay for visualization
         yield return StartCoroutine(OpenDeadEnds(deadEndsToOpen));
 
-        // Solve and time the updated solution
+        // Solve and count tiles for the updated solution
         ResetVisitedArray();
-        float startUpdatedTime = Time.realtimeSinceStartup;
-        if (SolveMaze(1, 1, updatedSolutionPath))
+        int updatedTileCount = SolveMazeBFS(1, 1, updatedSolutionPath);
+        if (updatedTileCount > 0)
         {
-            float endUpdatedTime = Time.realtimeSinceStartup;
-            UnityEngine.Debug.Log("Updated Solution Time: " + (endUpdatedTime - startUpdatedTime) * 1000 + " ms");
+            UnityEngine.Debug.Log("Updated Solution Tile Count: " + updatedTileCount);
             DrawUpdatedSolution();
         }
     }
@@ -111,6 +107,7 @@ public class MazeGenerator : MonoBehaviour
             }
         }
     }
+
     IEnumerator OpenDeadEnds(int numberOfDeadEndsToOpen)
     {
         List<Vector2Int> deadEnds = new List<Vector2Int>();
@@ -128,10 +125,36 @@ public class MazeGenerator : MonoBehaviour
 
         var randomDeadEnds = deadEnds.OrderBy(x => Random.value).Take(numberOfDeadEndsToOpen).ToList();
 
+        // Skapa en agent-instans
+        GameObject agent = Instantiate(agentPrefab, Vector2.zero, Quaternion.identity);
+
         foreach (var deadEnd in randomDeadEnds)
         {
+            agent.transform.position = new Vector2(deadEnd.x, deadEnd.y); // Flytta agenten till dead end
+            yield return new WaitForSeconds(agentDelay); // Fördröjning för visualisering
+
             OpenDeadEnd(deadEnd.x, deadEnd.y);
-            yield return new WaitForSeconds(generationDelay);
+        }
+
+        Destroy(agent); // Ta bort agenten när arbetet är klart
+    }
+
+    void DrawMazeStep(int x, int y)
+    {
+        // Draw the floor (path) at this position
+        Vector2 position = new Vector2(x, y);
+        Instantiate(floorPrefab, position, Quaternion.identity, transform);
+
+        // Draw walls around the paths where there are no paths
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                if (x + i >= 0 && x + i < width && y + j >= 0 && y + j < height && maze[x + i, y + j] == 0)
+                {
+                    Instantiate(wallPrefab, new Vector2(x + i, y + j), Quaternion.identity, transform);
+                }
+            }
         }
     }
 
@@ -152,92 +175,47 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
-
-
-    // Ritar både gångar och väggar steg för steg
-    void DrawMazeStep(int x, int y)
+    int SolveMazeBFS(int startX, int startY, List<Vector2> solutionPath)
     {
-        // Rita golv (gång) på denna position
-        Vector2 position = new Vector2(x, y);
-        Instantiate(floorPrefab, position, Quaternion.identity);
+        Queue<Vector2Int> queue = new Queue<Vector2Int>();
+        Dictionary<Vector2Int, Vector2Int> cameFrom = new Dictionary<Vector2Int, Vector2Int>();
 
-        // Rita väggar runt gångarna (där väggarna finns)
-        for (int i = -1; i <= 1; i++)
+        queue.Enqueue(new Vector2Int(startX, startY));
+        cameFrom[new Vector2Int(startX, startY)] = new Vector2Int(-1, -1);
+
+        Vector2Int end = new Vector2Int(width - 2, height - 2);
+
+        while (queue.Count > 0)
         {
-            for (int j = -1; j <= 1; j++)
+            Vector2Int current = queue.Dequeue();
+
+            if (current == end)
             {
-                if (x + i >= 0 && x + i < width && y + j >= 0 && y + j < height && maze[x + i, y + j] == 0)
+                while (current != new Vector2Int(-1, -1))
                 {
-                    Instantiate(wallPrefab, new Vector2(x + i, y + j), Quaternion.identity);
+                    solutionPath.Add(new Vector2(current.x, current.y));
+                    current = cameFrom[current];
+                }
+                solutionPath.Reverse();
+                return solutionPath.Count;
+            }
+
+            foreach (var direction in new Vector2Int[] {
+                new Vector2Int(0, 1), new Vector2Int(1, 0), new Vector2Int(0, -1), new Vector2Int(-1, 0) })
+            {
+                Vector2Int neighbor = current + direction;
+                if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < height &&
+                    maze[neighbor.x, neighbor.y] == 1 && !cameFrom.ContainsKey(neighbor))
+                {
+                    queue.Enqueue(neighbor);
+                    cameFrom[neighbor] = current;
                 }
             }
         }
+
+        return 0;
     }
 
-    // Depth-First Search för att hitta lösningsvägen
-    bool SolveMaze(int x, int y, List<Vector2> solutionPath)
-    {
-        if (x == width - 2 && y == height - 2)
-        {
-            solutionPath.Add(new Vector2(x, y));
-            return true;
-        }
-
-        if (IsValidMove(x, y))
-        {
-            visited[x, y] = true;
-            solutionPath.Add(new Vector2(x, y));
-
-            if (SolveMaze(x, y - 1, solutionPath)) return true;
-            if (SolveMaze(x, y + 1, solutionPath)) return true;
-            if (SolveMaze(x - 1, y, solutionPath)) return true;
-            if (SolveMaze(x + 1, y, solutionPath)) return true;
-
-            solutionPath.Remove(new Vector2(x, y));
-        }
-
-        return false;
-    }
-
-    bool IsValidMove(int x, int y)
-    {
-        return (x >= 0 && x < width && y >= 0 && y < height && maze[x, y] == 1 && !visited[x, y]);
-    }
-
-
-    // Räknar antalet gångar (öppna celler) som är grannar till en given cell
-    int CountOpenNeighbors(int x, int y)
-    {
-        int openNeighbors = 0;
-        if (maze[x + 1, y] == 1) openNeighbors++;
-        if (maze[x - 1, y] == 1) openNeighbors++;
-        if (maze[x, y + 1] == 1) openNeighbors++;
-        if (maze[x, y - 1] == 1) openNeighbors++;
-        return openNeighbors;
-    }
-
-
-
-    // Ritar hela labyrinten när den är klar
-    void DrawFullMaze()
-    {
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                if (maze[x, y] == 0)
-                {
-                    Instantiate(wallPrefab, new Vector2(x, y), Quaternion.identity, transform);
-                }
-                else
-                {
-                    Instantiate(floorPrefab, new Vector2(x, y), Quaternion.identity, transform);
-                }
-            }
-        }
-    }
-
-    // Ritar lösningsvägen med hjälp av pathPrefab
     void DrawInitialSolution()
     {
         foreach (Vector2 position in initialSolutionPath)
@@ -260,7 +238,35 @@ public class MazeGenerator : MonoBehaviour
             for (int j = 0; j < height; j++)
                 visited[i, j] = false;
     }
-    // Slumpar ordningen av riktningar
+
+    int CountOpenNeighbors(int x, int y)
+    {
+        int openNeighbors = 0;
+        if (maze[x + 1, y] == 1) openNeighbors++;
+        if (maze[x - 1, y] == 1) openNeighbors++;
+        if (maze[x, y + 1] == 1) openNeighbors++;
+        if (maze[x, y - 1] == 1) openNeighbors++;
+        return openNeighbors;
+    }
+
+    void DrawFullMaze()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (maze[x, y] == 0)
+                {
+                    Instantiate(wallPrefab, new Vector2(x, y), Quaternion.identity, transform);
+                }
+                else
+                {
+                    Instantiate(floorPrefab, new Vector2(x, y), Quaternion.identity, transform);
+                }
+            }
+        }
+    }
+
     void ShuffleArray(int[] array)
     {
         for (int i = array.Length - 1; i > 0; i--)
