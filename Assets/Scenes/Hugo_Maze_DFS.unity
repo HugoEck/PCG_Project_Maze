@@ -416,7 +416,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b6a59cc82fc602408d44d97f7182de6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedAlgorithm: 1
+  selectedAlgorithm: 0
   wallPrefab: {fileID: 2578954439767863642, guid: bf78978874867964f987b6d4a39f0889, type: 3}
   floorPrefab: {fileID: 6652955654351153951, guid: 70c3f37f6e7232e4aad3546edc031210, type: 3}
   startPrefab: {fileID: 2605630132837582212, guid: a258e299dd7b74c489f0f2f07e8c310b, type: 3}
@@ -451,8 +451,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   agentPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
-  numAgents: 10
+  numAgents: 5
   stepDelay: 0.001
+  agentOpenDelay: 0.5
+  actionType: open
 --- !u!1 &1317421384
 GameObject:
   m_ObjectHideFlags: 0
@@ -501,6 +503,8 @@ MonoBehaviour:
   agentPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
   numAgents: 20
   stepDelay: 0.01
+  agentOpenDelay: 0
+  actionType: close
 --- !u!114 &1317421389
 MonoBehaviour:
   m_ObjectHideFlags: 0
