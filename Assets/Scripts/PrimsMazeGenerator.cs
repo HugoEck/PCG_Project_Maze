@@ -48,52 +48,53 @@ public class PrimMazeGenerator : MonoBehaviour, IMazeGenerator
             }
         }
 
-        // Set goal position to the furthest path from start
-        goalPos = FindFurthestPathFromStart();
+        // Use MazeManager to find the furthest path for goal position
+        goalPos = MazeManager.Instance.FindFurthestPathFromStart(startPos);
 
         Debug.Log($"Maze generation complete with start at {startPos} and goal at {goalPos}");
         return maze;
     }
 
-    private Vector2Int FindFurthestPathFromStart()
-    {
-        Queue<Vector2Int> queue = new Queue<Vector2Int>();
-        Dictionary<Vector2Int, int> distances = new Dictionary<Vector2Int, int>();
+    //private Vector2Int FindFurthestFloorFromStart()
+    //{
+    //    Queue<Vector2Int> queue = new Queue<Vector2Int>();
+    //    Dictionary<Vector2Int, int> distances = new Dictionary<Vector2Int, int>();
 
-        queue.Enqueue(startPos);
-        distances[startPos] = 0;
+    //    queue.Enqueue(startPos);
+    //    distances[startPos] = 0;
 
-        Vector2Int furthestCell = startPos;
-        int maxDistance = 0;
+    //    Vector2Int furthestCell = startPos;
+    //    int maxDistance = 0;
 
-        while (queue.Count > 0)
-        {
-            Vector2Int current = queue.Dequeue();
-            int currentDistance = distances[current];
+    //    while (queue.Count > 0)
+    //    {
+    //        Vector2Int current = queue.Dequeue();
+    //        int currentDistance = distances[current];
 
-            // Explore neighbors in 4 cardinal directions
-            Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-            foreach (var dir in directions)
-            {
-                Vector2Int neighbor = current + dir;
+    //        // Explore neighbors in 4 cardinal directions
+    //        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+    //        foreach (var dir in directions)
+    //        {
+    //            Vector2Int neighbor = current + dir;
 
-                if (IsInBounds(neighbor) && maze[neighbor.x, neighbor.y] == 1 && !distances.ContainsKey(neighbor))
-                {
-                    distances[neighbor] = currentDistance + 1;
-                    queue.Enqueue(neighbor);
+    //            // Check if the neighbor is a floor tile and hasn't been visited
+    //            if (IsInBounds(neighbor) && maze[neighbor.x, neighbor.y] == 1 && !distances.ContainsKey(neighbor))
+    //            {
+    //                distances[neighbor] = currentDistance + 1;
+    //                queue.Enqueue(neighbor);
 
-                    // Update furthest cell if this is the longest path found
-                    if (distances[neighbor] > maxDistance)
-                    {
-                        maxDistance = distances[neighbor];
-                        furthestCell = neighbor;
-                    }
-                }
-            }
-        }
+    //                // Update furthest cell if this is the longest path found
+    //                if (distances[neighbor] > maxDistance)
+    //                {
+    //                    maxDistance = distances[neighbor];
+    //                    furthestCell = neighbor;
+    //                }
+    //            }
+    //        }
+    //    }
 
-        return furthestCell;
-    }
+    //    return furthestCell;
+    //}
 
     private HashSet<Vector2Int> GetNeighborCells(int x, int y, bool forFrontier)
     {

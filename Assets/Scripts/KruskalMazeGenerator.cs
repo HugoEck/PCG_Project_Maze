@@ -27,7 +27,6 @@ public class KruskalMazeGenerator : MonoBehaviour, IMazeGenerator
             Vector2Int cellA = wall.cellA;
             Vector2Int cellB = wall.cellB;
 
-            // Ensure both cells exist in the dictionary
             if (cellSet.ContainsKey(cellA) && cellSet.ContainsKey(cellB) && cellSet[cellA] != cellSet[cellB])
             {
                 RemoveWallBetweenCells(cellA, cellB);
@@ -35,9 +34,11 @@ public class KruskalMazeGenerator : MonoBehaviour, IMazeGenerator
             }
         }
 
-        // Define start and goal positions
+        // Define start position
         startPos = new Vector2Int(1, 1);
-        goalPos = new Vector2Int(width - 2, height - 2);
+
+        // Use MazeManager to find the furthest path for goal position
+        goalPos = MazeManager.Instance.FindFurthestPathFromStart(startPos);
 
         return maze;
     }
@@ -48,19 +49,16 @@ public class KruskalMazeGenerator : MonoBehaviour, IMazeGenerator
         {
             for (int y = 0; y < height; y++)
             {
-                // Initialize all cells as walls (0)
                 maze[x, y] = 0;
 
-                // Make only certain cells paths (1) at the start, skipping outer boundaries and creating a checkerboard pattern
                 if (x % 2 == 1 && y % 2 == 1 && x < width - 1 && y < height - 1)
                 {
                     Vector2Int cell = new Vector2Int(x, y);
                     cellSet[cell] = nextSetId++;
-                    maze[x, y] = 1;  // Mark the cell as a path
+                    maze[x, y] = 1;
 
-                    // Add walls around this cell (only add walls within the bounds)
-                    if (x + 2 < width) walls.Add(new Wall(cell, new Vector2Int(x + 2, y)));  // Right wall
-                    if (y + 2 < height) walls.Add(new Wall(cell, new Vector2Int(x, y + 2))); // Bottom wall
+                    if (x + 2 < width) walls.Add(new Wall(cell, new Vector2Int(x + 2, y)));
+                    if (y + 2 < height) walls.Add(new Wall(cell, new Vector2Int(x, y + 2)));
                 }
             }
         }
@@ -68,11 +66,9 @@ public class KruskalMazeGenerator : MonoBehaviour, IMazeGenerator
 
     private void RemoveWallBetweenCells(Vector2Int cellA, Vector2Int cellB)
     {
-        // Find the wall cell between cellA and cellB and turn it into a path (1)
         Vector2Int wallPos = new Vector2Int((cellA.x + cellB.x) / 2, (cellA.y + cellB.y) / 2);
         maze[wallPos.x, wallPos.y] = 1;
 
-        // Mark cellA and cellB as paths if they aren't already
         maze[cellA.x, cellA.y] = 1;
         maze[cellB.x, cellB.y] = 1;
     }
