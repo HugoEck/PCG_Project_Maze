@@ -1,126 +1,102 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 
 public class PrimMazeGenerator : MonoBehaviour, IMazeGenerator
 {
     private int[,] maze;
     private Vector2Int startPos;
     private Vector2Int goalPos;
+    private const int WALL = 0;
+    private const int PATH = 1;
+    private const int FRONTIER = 2;
 
     public int[,] GenerateMaze(int width, int height)
     {
-        // Initialize maze grid
+        // Initialize the maze array
         maze = new int[width, height];
-
-        // Set all cells as walls initially
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
-                maze[x, y] = 0;
+                maze[x, y] = WALL; // All cells start as walls
 
-        // Define the start position and mark it as a passage
-        startPos = new Vector2Int(1, 1);
-        maze[startPos.x, startPos.y] = 1;
+        // Start from a random odd cell within the maze
+        int startX = Random.Range(1, width / 2) * 2 - 1;
+        int startY = Random.Range(1, height / 2) * 2 - 1;
+        startPos = new Vector2Int(1, 1 );
 
-        // Initialize frontier cells around start position
-        HashSet<Vector2Int> frontier = GetNeighborCells(startPos.x, startPos.y, true);
+        MarkCellAsPath(startX, startY);
 
-        // Generate maze by carving passages
-        while (frontier.Any())
+        // Generate the maze by processing frontiers
+        while (frontiers.Count > 0)
         {
-            // Pick a random frontier cell
-            Vector2Int cell = frontier.ElementAt(Random.Range(0, frontier.Count));
-            frontier.Remove(cell);
+            // Randomly select a frontier cell
+            Vector2Int frontierCell = frontiers[Random.Range(0, frontiers.Count)];
+            frontiers.Remove(frontierCell);
 
-            // Ensure this cell connects to only one passage cell
-            if (GetNeighborCells(cell.x, cell.y, false).Count == 1)
+            // Try to connect this frontier cell to an existing path
+            if (TryCarvePathToNeighbor(frontierCell))
             {
-                maze[cell.x, cell.y] = 1; // Mark as passage
-
-                // Connect this cell to an existing passage cell
-                Vector2Int connection = GetNeighborCells(cell.x, cell.y, false).First();
-                Vector2Int between = GetBetweenCell(cell, connection);
-                maze[between.x, between.y] = 1;
-
-                // Add new frontier cells around this cell
-                frontier.UnionWith(GetNeighborCells(cell.x, cell.y, true));
+                // Mark this cell as part of the path
+                MarkCellAsPath(frontierCell.x, frontierCell.y);
             }
         }
 
-        // Use MazeManager to find the furthest path for goal position
+        // Set the goal position as the furthest path cell from start
         goalPos = MazeManager.Instance.FindFurthestPathFromStart(startPos);
 
         Debug.Log($"Maze generation complete with start at {startPos} and goal at {goalPos}");
         return maze;
     }
 
-    //private Vector2Int FindFurthestFloorFromStart()
-    //{
-    //    Queue<Vector2Int> queue = new Queue<Vector2Int>();
-    //    Dictionary<Vector2Int, int> distances = new Dictionary<Vector2Int, int>();
+    private List<Vector2Int> frontiers = new List<Vector2Int>();
 
-    //    queue.Enqueue(startPos);
-    //    distances[startPos] = 0;
-
-    //    Vector2Int furthestCell = startPos;
-    //    int maxDistance = 0;
-
-    //    while (queue.Count > 0)
-    //    {
-    //        Vector2Int current = queue.Dequeue();
-    //        int currentDistance = distances[current];
-
-    //        // Explore neighbors in 4 cardinal directions
-    //        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-    //        foreach (var dir in directions)
-    //        {
-    //            Vector2Int neighbor = current + dir;
-
-    //            // Check if the neighbor is a floor tile and hasn't been visited
-    //            if (IsInBounds(neighbor) && maze[neighbor.x, neighbor.y] == 1 && !distances.ContainsKey(neighbor))
-    //            {
-    //                distances[neighbor] = currentDistance + 1;
-    //                queue.Enqueue(neighbor);
-
-    //                // Update furthest cell if this is the longest path found
-    //                if (distances[neighbor] > maxDistance)
-    //                {
-    //                    maxDistance = distances[neighbor];
-    //                    furthestCell = neighbor;
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //    return furthestCell;
-    //}
-
-    private HashSet<Vector2Int> GetNeighborCells(int x, int y, bool forFrontier)
+    private void MarkCellAsPath(int x, int y)
     {
-        HashSet<Vector2Int> neighbors = new HashSet<Vector2Int>();
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        maze[x, y] = PATH;
 
-        foreach (var dir in directions)
+        // Add valid neighbors as frontiers
+        AddFrontierCell(x + 2, y);
+        AddFrontierCell(x - 2, y);
+        AddFrontierCell(x, y + 2);
+        AddFrontierCell(x, y - 2);
+    }
+
+    private void AddFrontierCell(int x, int y)
+    {
+        if (IsInBounds(x, y) && maze[x, y] == WALL)
         {
-            Vector2Int neighbor = new Vector2Int(x + dir.x * 2, y + dir.y * 2);
-            if (IsInBounds(neighbor) && maze[neighbor.x, neighbor.y] == (forFrontier ? 0 : 1))
-            {
-                neighbors.Add(neighbor);
-            }
+            maze[x, y] = FRONTIER;
+            frontiers.Add(new Vector2Int(x, y));
         }
-
-        return neighbors;
     }
 
-    private Vector2Int GetBetweenCell(Vector2Int cell1, Vector2Int cell2)
+    private bool TryCarvePathToNeighbor(Vector2Int cell)
     {
-        return new Vector2Int((cell1.x + cell2.x) / 2, (cell1.y + cell2.y) / 2);
+        List<Vector2Int> neighbors = new List<Vector2Int>();
+
+        // Collect neighbors that are paths
+        if (IsPath(cell.x + 2, cell.y)) neighbors.Add(new Vector2Int(cell.x + 2, cell.y));
+        if (IsPath(cell.x - 2, cell.y)) neighbors.Add(new Vector2Int(cell.x - 2, cell.y));
+        if (IsPath(cell.x, cell.y + 2)) neighbors.Add(new Vector2Int(cell.x, cell.y + 2));
+        if (IsPath(cell.x, cell.y - 2)) neighbors.Add(new Vector2Int(cell.x, cell.y - 2));
+
+        if (neighbors.Count == 0) return false;
+
+        // Randomly select a neighbor and carve a path to it
+        Vector2Int neighbor = neighbors[Random.Range(0, neighbors.Count)];
+        Vector2Int between = (cell + neighbor) / 2; // Midpoint between cell and neighbor
+        maze[between.x, between.y] = PATH; // Carve a path between the two cells
+        return true;
     }
 
-    private bool IsInBounds(Vector2Int cell)
+    private bool IsPath(int x, int y)
     {
-        return cell.x > 0 && cell.x < maze.GetLength(0) - 1 && cell.y > 0 && cell.y < maze.GetLength(1) - 1;
+        return IsInBounds(x, y) && maze[x, y] == PATH;
+    }
+
+    private bool IsInBounds(int x, int y)
+    {
+        return x > 0 && x < maze.GetLength(0) - 1 && y > 0 && y < maze.GetLength(1) - 1;
     }
 
     public Vector2Int GetStartPosition() => startPos;
