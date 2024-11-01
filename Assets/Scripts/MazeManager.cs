@@ -179,4 +179,11 @@ public class MazeManager : MonoBehaviour
     {
         return cell.x >= 0 && cell.x < maze.GetLength(0) && cell.y >= 0 && cell.y < maze.GetLength(1);
     }
+
+    public void UpdateGoalAfterDeadEndProcessing(Vector2Int start)
+    {
+        // Find the furthest accessible path cell from start
+        goalPos = FindFurthestPathFromStart(start);
+        Debug.Log($"Updated Goal Position after dead-end processing: {goalPos}");
+    }
 }
