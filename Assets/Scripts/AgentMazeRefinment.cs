@@ -8,16 +8,24 @@ public class AgentMazeRefinement : MonoBehaviour
 
     private int[,] maze;
     public int numAgents = 3;
-    public float stepDelay = 0.001f;
-    public float agentOpenDelay = 0f;
+    public float closeStepDelay = 0.1f; // Adjust delay for visibility
+    public float openStepDelay = 0.1f; // Adjust delay for visibility
     private Vector2Int startPos;
     private Vector2Int goalPos;
     private int width;
     private int height;
 
-    public string actionType = "close"; // Choose between "close" or "open" for dead ends
+    public enum ActionType
+    {
+        Close,           // Close dead ends
+        Open,            // Open dead ends
+        CloseAndOpen     // Close then open dead ends
+    }
 
-    private List<Vector2Int> deadEnds = new List<Vector2Int>();
+    public ActionType actionType = ActionType.Close;
+
+    private List<Vector2Int> initialDeadEnds = new List<Vector2Int>();
+    private List<Vector2Int> secondaryDeadEnds = new List<Vector2Int>();
 
     public void InitializeWithMazeData(int[,] maze, Vector2Int start, Vector2Int goal, int width, int height)
     {
@@ -33,22 +41,17 @@ public class AgentMazeRefinement : MonoBehaviour
         this.width = width;
         this.height = height;
 
-        IdentifyDeadEnds();
-        ShuffleDeadEnds();
-        deadEnds.Remove(startPos);
-        deadEnds.Remove(goalPos);
+        IdentifyInitialDeadEnds();
+        ShuffleDeadEnds(initialDeadEnds);
+        initialDeadEnds.Remove(startPos);
+        initialDeadEnds.Remove(goalPos);
 
         StartCoroutine(AssignAgentsToHandleDeadEnds());
     }
 
-    void IdentifyDeadEnds()
+    void IdentifyInitialDeadEnds()
     {
-        if (maze == null)
-        {
-            Debug.LogError("Maze not initialized in IdentifyDeadEnds.");
-            return;
-        }
-
+        initialDeadEnds.Clear();
         for (int x = 1; x < width - 1; x++)
         {
             for (int y = 1; y < height - 1; y++)
@@ -56,34 +59,55 @@ public class AgentMazeRefinement : MonoBehaviour
                 Vector2Int pos = new Vector2Int(x, y);
                 if (maze[x, y] == 1 && IsDeadEnd(pos))
                 {
-                    deadEnds.Add(pos);
+                    initialDeadEnds.Add(pos);
                 }
             }
         }
+    }
 
-        deadEnds.Remove(startPos);
-        deadEnds.Remove(goalPos);
-        Debug.Log($"Dead Ends Count: {deadEnds.Count}");
-        Debug.Log($"Start Position: {startPos}");
-        Debug.Log($"Goal Position: {goalPos}");
+    void IdentifySecondaryDeadEnds()
+    {
+        secondaryDeadEnds.Clear();
+        for (int x = 1; x < width - 1; x++)
+        {
+            for (int y = 1; y < height - 1; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+                if (maze[x, y] == 1 && IsDeadEnd(pos))
+                {
+                    secondaryDeadEnds.Add(pos);
+                }
+            }
+        }
     }
 
     IEnumerator AssignAgentsToHandleDeadEnds()
     {
-        int assignedAgents = Mathf.Min(numAgents, deadEnds.Count);
+        int assignedAgents = Mathf.Min(numAgents, initialDeadEnds.Count);
 
         for (int i = 0; i < assignedAgents; i++)
         {
-            Vector2Int deadEndPos = deadEnds[i];
+            Vector2Int deadEndPos = initialDeadEnds[i];
             GameObject agentObj = Instantiate(agentPrefab, new Vector2(deadEndPos.x, deadEndPos.y), Quaternion.identity);
 
-            if (actionType == "close")
+            // Use the enum to determine the action
+            switch (actionType)
             {
-                yield return StartCoroutine(CloseDeadEnd(deadEndPos, agentObj));
-            }
-            else if (actionType == "open")
-            {
-                yield return StartCoroutine(OpenDeadEnd(deadEndPos, agentObj));
+                case ActionType.Close:
+                    yield return StartCoroutine(CloseDeadEnd(deadEndPos, agentObj));
+                    break;
+
+                case ActionType.Open:
+                    yield return StartCoroutine(OpenDeadEnd(deadEndPos, agentObj));
+                    break;
+
+                case ActionType.CloseAndOpen:
+                    yield return StartCoroutine(CloseDeadEnd(deadEndPos, agentObj));
+                    yield return new WaitForSeconds(closeStepDelay);
+                    IdentifySecondaryDeadEnds();
+                    if (secondaryDeadEnds.Count > i)
+                        yield return StartCoroutine(OpenDeadEnd(secondaryDeadEnds[i], agentObj));
+                    break;
             }
 
             Destroy(agentObj);
@@ -101,7 +125,7 @@ public class AgentMazeRefinement : MonoBehaviour
             maze[currentPos.x, currentPos.y] = 0;
             MazeManager.Instance.UpdateVisualMaze(maze);
             agentObj.transform.position = new Vector2(currentPos.x, currentPos.y);
-            yield return new WaitForSeconds(stepDelay);
+            yield return new WaitForSeconds(closeStepDelay);
 
             currentPos = GetNextInDeadEnd(currentPos);
             if (currentPos == Vector2Int.zero) break;
@@ -120,7 +144,7 @@ public class AgentMazeRefinement : MonoBehaviour
                 maze[opening.x, opening.y] = 1;
                 MazeManager.Instance.UpdateVisualMaze(maze);
                 agentObj.transform.position = new Vector2(opening.x, opening.y);
-                yield return new WaitForSeconds(agentOpenDelay);
+                yield return new WaitForSeconds(openStepDelay);
             }
             else
             {
@@ -173,14 +197,14 @@ public class AgentMazeRefinement : MonoBehaviour
         return pathCount == 1;
     }
 
-    void ShuffleDeadEnds()
+    void ShuffleDeadEnds(List<Vector2Int> deadEndsList)
     {
-        for (int i = deadEnds.Count - 1; i > 0; i--)
+        for (int i = deadEndsList.Count - 1; i > 0; i--)
         {
             int randomIndex = Random.Range(0, i + 1);
-            Vector2Int temp = deadEnds[i];
-            deadEnds[i] = deadEnds[randomIndex];
-            deadEnds[randomIndex] = temp;
+            Vector2Int temp = deadEndsList[i];
+            deadEndsList[i] = deadEndsList[randomIndex];
+            deadEndsList[randomIndex] = temp;
         }
     }
 }
