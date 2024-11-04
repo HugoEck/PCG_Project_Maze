@@ -8,10 +8,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
-  - enabled: 0
-    path: Assets/Scenes/Oscar's Maze.unity
-    guid: f1ffdbe88ff3ec84baac237c39bdcbdb
   - enabled: 1
     path: Assets/Scenes/MainMenu.unity
     guid: 961a3c49e69cabc41b2e37ce4d007dff
+  - enabled: 1
+    path: Assets/Scenes/Prim.unity
+    guid: ece2db52faaedb14a9b7655734a4b18b
+  - enabled: 1
+    path: Assets/Scenes/Kruskal.unity
+    guid: 5fe27a30911a24a4fac386547bf304c0
+  - enabled: 1
+    path: Assets/Scenes/DFS.unity
+    guid: 0f058fee5de487c4188be8de9e448778
   m_configObjects: {}

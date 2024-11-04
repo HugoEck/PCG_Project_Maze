@@ -4080,7 +4080,7 @@ MonoBehaviour:
   m_Value: 0
   m_Options:
     m_Options:
-    - m_Text: No Agent
+    - m_Text: No Agents
       m_Image: {fileID: 0}
     - m_Text: Remove Dead Ends
       m_Image: {fileID: 0}
@@ -4297,13 +4297,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sceneDropdown: {fileID: 1779731734}
+  algorithmNames:
+  - DFS
+  - Kruskal
+  - Prim
   sceneNames:
   - DFS
   - Kruskal
   - Prim
   agentDropdown: {fileID: 1798675501}
   agentCountInput: {fileID: 1509764702}
-  agentMazeRefinement: {fileID: 0}
+  mazeSizeInput: {fileID: 1898767459}
+  startButton: {fileID: 548177287}
 --- !u!1 &1898767457
 GameObject:
   m_ObjectHideFlags: 0
@@ -4875,7 +4880,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: No Agent
+  m_text: No Agents
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
