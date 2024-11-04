@@ -4420,7 +4420,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneDropdown: {fileID: 1779731734}
   algorithmNames:
-  - 'DFS '
+  - DFS
   - Kruskal
   - Prim
   sceneNames:
