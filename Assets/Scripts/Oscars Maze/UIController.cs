@@ -1,68 +1,41 @@
 using UnityEngine;
-using TMPro;  // If using TextMeshPro
-using UnityEngine.SceneManagement;
+using TMPro;
 
 public class UIController : MonoBehaviour
 {
-    public TextMeshProUGUI timerText;  // Reference to the timer text (UI Text component)
-    public GameObject gameOverPanel;   // Reference to the GameOver panel to enable/disable
-    private float elapsedTime;         // Tracks the time taken to reach the goal
-    private bool isTimerRunning;       // Whether the timer is running or not
+    public TextMeshProUGUI timerText;
+    public GameObject panel;  // Changed from "gameOverPanel" to "panel" to match your setup
 
-    void Start()
-    {
-        // Ensure the game over panel is hidden at the start
-        gameOverPanel.SetActive(false);
-
-        // Start the timer when the game starts
-        StartTimer();
-    }
+    private float elapsedTime = 0f;
+    private bool isTimerRunning = false;
 
     void Update()
     {
-        // If the timer is running, update the time display
         if (isTimerRunning)
         {
             elapsedTime += Time.deltaTime;
-            UpdateTimerDisplay();
+            timerText.text = FormatTime(elapsedTime);
         }
     }
 
-    // Starts the timer
     public void StartTimer()
     {
         elapsedTime = 0f;
         isTimerRunning = true;
+        panel.SetActive(false); // Ensure panel is hidden during gameplay
     }
 
-    // Stops the timer when the goal is reached
-    public void StopTimer()
+    public void StopTimerAndShowPanel()
     {
         isTimerRunning = false;
+        panel.SetActive(true);  // Display panel when goal is reached
     }
 
-    // Updates the timer text display in 00:00:00 format (minutes/seconds/milliseconds)
-    void UpdateTimerDisplay()
+    private string FormatTime(float time)
     {
-        int minutes = Mathf.FloorToInt(elapsedTime / 60F);
-        int seconds = Mathf.FloorToInt(elapsedTime % 60F);
-        int milliseconds = Mathf.FloorToInt((elapsedTime * 1000F) % 1000F);
-        timerText.text = string.Format("{0:00}:{1:00}:{2:000}", minutes, seconds, milliseconds);
-    }
-
-    // This function will be called when the agent reaches the goal
-    public void ShowGameOverScreen()
-    {
-        // Stop the timer
-        StopTimer();
-
-        // Enable the game over panel to show the timer and restart button
-        gameOverPanel.SetActive(true);
-    }
-
-    // Called when the restart button is clicked, loads the main menu scene
-    public void OnRestartButtonClick()
-    {
-        SceneManager.LoadScene("MainMenuScene");  // Change this to your main menu scene name
+        int minutes = Mathf.FloorToInt(time / 60);
+        int seconds = Mathf.FloorToInt(time % 60);
+        int milliseconds = Mathf.FloorToInt((time * 1000) % 1000);
+        return string.Format("{0:00}:{1:00}:{2:000}", minutes, seconds, milliseconds);
     }
 }

@@ -1,47 +1,30 @@
 using UnityEngine;
-using TMPro;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class MainMenuController : MonoBehaviour
 {
-    public TMP_InputField mazeSizeInputTMP;  // TextMeshPro InputField for maze size
-    public TMP_Dropdown algorithmDropdownTMP;  // TextMeshPro Dropdown for algorithm selection
-    public UnityEngine.UI.Button startButtonTMP;  // Unity UI Button
+    public TMP_InputField mazeSizeInput;    // Reference to the input field for maze size
+    public TMP_Dropdown algorithmDropdown;  // Reference to the dropdown to select maze generation algorithm
+    public GameObject startButton;          // Reference to the start button GameObject
 
-    public static int mazeSize;  // To store the selected maze size
-    public static string selectedAlgorithm;  // To store the selected algorithm
-
-    void Start()
+    public void OnStart()
     {
-        // Set default values for the input field and dropdown
-        mazeSizeInputTMP.text = "20";  // Default maze size
-        algorithmDropdownTMP.options.Clear();
+        Debug.Log("Start button clicked!");
 
-        // Add options to the TextMeshPro dropdown
-        algorithmDropdownTMP.options.Add(new TMP_Dropdown.OptionData() { text = "DFS" });
-        algorithmDropdownTMP.options.Add(new TMP_Dropdown.OptionData() { text = "Prim's Algorithm" });
-
-        // Add listener for the start button
-        startButtonTMP.onClick.AddListener(OnStartButtonClick);
-    }
-
-    // This function is called when the Start button is clicked
-    void OnStartButtonClick()
-    {
-        // Get the maze size from the TMP InputField
-        if (int.TryParse(mazeSizeInputTMP.text, out int size))
+        // Validate Maze Size Input
+        int mazeSize = 0;
+        if (!int.TryParse(mazeSizeInput.text, out mazeSize) || mazeSize <= 0)
         {
-            mazeSize = size;
-        }
-        else
-        {
-            mazeSize = 20;  // Default to 20 if input is invalid
+            Debug.LogError("Invalid Maze Size. Please enter a positive integer.");
+            return;
         }
 
-        // Get the selected algorithm from the TMP Dropdown
-        selectedAlgorithm = algorithmDropdownTMP.options[algorithmDropdownTMP.value].text;
+        // Assign Maze Size and Algorithm Index to GameSettings (assuming GameSettings is a static class or singleton)
+        GameSettings.MazeSize = mazeSize;
+        GameSettings.AlgorithmIndex = algorithmDropdown.value;
 
-        // Load the game scene where the maze will be generated
-        SceneManager.LoadScene("Oscar's Maze");  // Make sure your maze scene is named "GameScene"
+        // Load the next scene - Oscar's Maze
+        SceneManager.LoadScene("Oscar's Maze");
     }
 }
