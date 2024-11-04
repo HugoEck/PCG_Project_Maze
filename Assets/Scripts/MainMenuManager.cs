@@ -54,11 +54,24 @@ public class MainMenuManager : MonoBehaviour
 
         // Set up the start button
         startButton.onClick.AddListener(StartScene);
+
+        // Initialize the toggle state based on the toggle UI
+        agentToggle.isOn = PlayerPrefs.GetInt("IncludeAgentPrefab", 0) == 1;
+
+        // Add a listener to save the preference whenever the toggle is changed
+        agentToggle.onValueChanged.AddListener(SetIncludeAgentPrefab);
     }
 
+    public Toggle agentToggle;
 
+    // Variable to store the toggle state
+    public bool includeAgentPrefab;
 
-
+    private void SetIncludeAgentPrefab(bool isEnabled)
+    {
+        // Save the toggle state in PlayerPrefs
+        PlayerPrefs.SetInt("IncludeAgentPrefab", isEnabled ? 1 : 0);
+    }
 
     void SetSelectedAlgorithm()
     {

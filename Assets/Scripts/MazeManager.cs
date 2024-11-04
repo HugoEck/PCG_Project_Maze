@@ -8,13 +8,17 @@ public class MazeManager : MonoBehaviour
     public enum MazeAlgorithm { PickAlgorithm, DFS, Kruskal, Prim }
     public MazeAlgorithm selectedAlgorithm;
     private IMazeGenerator mazeGenerator;
+    private MainMenuManager mainMenuManager;
+
 
     public GameObject wallPrefab;
     public GameObject floorPrefab;
     public GameObject startPrefab;
     public GameObject goalPrefab;
-    public GameObject playerPrefab; // Reference to the player prefab
     public GameObject agentPrefab;
+    public GameObject playerPrefab;
+
+    private bool toggleApplied = false;
 
     private int[,] maze;
     private Vector2Int startPos;
@@ -76,6 +80,25 @@ public class MazeManager : MonoBehaviour
 
         // Step 6: After agents finish handling dead ends, place player
         StartCoroutine(WaitForAgentsThenPlacePlayer(agentRefinement));
+
+
+        //-- Agent/Player Swapping 
+
+        // Find and cache the MainMenuManager instance
+        mainMenuManager = FindObjectOfType<MainMenuManager>();
+
+        // Instantiate prefabs as needed
+        if (agentPrefab != null)
+        {
+            Instantiate(agentPrefab);
+        }
+        if (playerPrefab != null)
+        {
+            Instantiate(playerPrefab);
+        }
+
+        // Start the coroutine to toggle prefabs with a slight delay
+        StartCoroutine(TogglePrefabsWithDelay());
     }
 
     IEnumerator WaitForAgentsThenPlacePlayer(AgentMazeRefinement agentRefinement)
@@ -229,5 +252,44 @@ public class MazeManager : MonoBehaviour
         // Find the furthest accessible path cell from start
         goalPos = FindFurthestPathFromStart(start);
         Debug.Log($"Updated Goal Position after dead-end processing: {goalPos}");
+    }
+
+    private IEnumerator TogglePrefabsWithDelay()
+    {
+        // Wait a short time to ensure all objects are instantiated
+        yield return new WaitForSeconds(0.1f);
+
+        TogglePrefabs();
+    }
+
+    private void TogglePrefabs()
+    {
+        bool includeAgentPrefab = PlayerPrefs.GetInt("IncludeAgentPrefab", 0) == 1;
+
+        GameObject[] playerClones = GameObject.FindGameObjectsWithTag("Player");
+        GameObject[] agentClones = GameObject.FindGameObjectsWithTag("Agent");
+
+        if (includeAgentPrefab)
+        {
+            foreach (GameObject player in playerClones)
+            {
+                player.SetActive(false);
+            }
+            foreach (GameObject agent in agentClones)
+            {
+                agent.SetActive(true);
+            }
+        }
+        else
+        {
+            foreach (GameObject player in playerClones)
+            {
+                player.SetActive(true);
+            }
+            foreach (GameObject agent in agentClones)
+            {
+                agent.SetActive(false);
+            }
+        }
     }
 }
