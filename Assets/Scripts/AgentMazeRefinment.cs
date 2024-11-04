@@ -113,6 +113,9 @@ public class AgentMazeRefinement : MonoBehaviour
             Destroy(agentObj);
         }
 
+        // After refinement, recalculate goal position using MazeManager
+        goalPos = MazeManager.Instance.FindFurthestPathFromStart(startPos);
+
         MazeManager.Instance.PlaceStartAndGoal();
     }
 

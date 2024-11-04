@@ -6,14 +6,15 @@ public class PlayerController : MonoBehaviour
     public float moveSpeed = 5f;
     public float moveDelay = 0.1f;
     public Vector2 goalPosition;
-    private TextMeshProUGUI stepText; 
+    private TextMeshProUGUI stepText;
 
     private Vector2 targetPosition;
     private bool isMoving;
     private float moveTimer;
     private int stepsTaken = 0;
-    private float timer = 0f; 
-    private bool timerStarted = false; 
+    private float timer = 0f;
+    private bool timerStarted = false;
+    private bool goalReached = false; // New variable to track if the goal is reached
 
     private void Start()
     {
@@ -31,8 +32,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-
-        if (timerStarted)
+        // Update the timer only if it has started and the goal is not reached
+        if (timerStarted && !goalReached)
         {
             timer += Time.deltaTime;
             UpdateDisplayText();
@@ -46,8 +47,11 @@ public class PlayerController : MonoBehaviour
             {
                 isMoving = false;
 
+                // Check if the player has reached the goal position
                 if ((Vector2)transform.position == goalPosition)
                 {
+                    goalReached = true;        // Set goalReached to true
+                    timerStarted = false;      // Stop the timer
                     Debug.Log("Maze completed! Steps taken: " + stepsTaken + " | Time: " + Mathf.FloorToInt(timer) + "s");
                 }
             }
@@ -58,7 +62,6 @@ public class PlayerController : MonoBehaviour
             else if (Input.GetKey(KeyCode.S)) TryMove(Vector2.down);
             else if (Input.GetKey(KeyCode.A)) TryMove(Vector2.left);
             else if (Input.GetKey(KeyCode.D)) TryMove(Vector2.right);
-
         }
     }
 
@@ -73,8 +76,8 @@ public class PlayerController : MonoBehaviour
             moveTimer = moveDelay;
             stepsTaken++;
 
-            // Start the timer on the first move
-            if (!timerStarted)
+            // Start the timer on the first move if it hasn't started yet
+            if (!timerStarted && !goalReached)
             {
                 timerStarted = true;
             }
