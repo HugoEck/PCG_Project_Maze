@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class MazeManager : MonoBehaviour
 {
-    public enum MazeAlgorithm { DFS, Kruskal, Prim }
+    public enum MazeAlgorithm { PickAlgorithm, DFS, Kruskal, Prim }
     public MazeAlgorithm selectedAlgorithm;
     private IMazeGenerator mazeGenerator;
 
@@ -13,6 +14,7 @@ public class MazeManager : MonoBehaviour
     public GameObject startPrefab;
     public GameObject goalPrefab;
     public GameObject playerPrefab; // Reference to the player prefab
+    public GameObject agentPrefab;
 
     private int[,] maze;
     private Vector2Int startPos;
@@ -32,14 +34,17 @@ public class MazeManager : MonoBehaviour
 
     void Start()
     {
-        // Step 1: Retrieve selected algorithm and maze size from PlayerPrefs
         selectedAlgorithm = (MazeAlgorithm)PlayerPrefs.GetInt("algorithmType", (int)MazeAlgorithm.DFS);
+        Debug.Log("Loaded Algorithm Type: " + selectedAlgorithm);
         width = PlayerPrefs.GetInt("mazeWidth", 20);
         height = PlayerPrefs.GetInt("mazeHeight", 20);
 
         // Step 2: Generate the maze
         switch (selectedAlgorithm)
         {
+            case MazeAlgorithm.PickAlgorithm:
+
+            break;
             case MazeAlgorithm.DFS:
                 mazeGenerator = gameObject.AddComponent<DFSMazeGenerator>();
                 break;
@@ -84,6 +89,15 @@ public class MazeManager : MonoBehaviour
         // Now, place the player
         PlacePlayer();
         AdjustCameraToFitMaze();  // Ensure camera shows the whole maze
+        if (agentPrefab != null)
+        {
+            GameObject agentInstance = Instantiate(agentPrefab, new Vector3(startPos.x, startPos.y, -1), Quaternion.identity);
+            MazeSolvingAgent agentScript = agentInstance.GetComponent<MazeSolvingAgent>();
+            if (agentScript != null)
+            {
+                agentScript.InitializeWithMazeData(maze, startPos, goalPos, width, height);
+            }
+        }
     }
 
 

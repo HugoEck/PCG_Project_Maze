@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class AgentMazeRefinement : MonoBehaviour
@@ -77,6 +78,7 @@ public class AgentMazeRefinement : MonoBehaviour
                 }
             }
         }
+        Debug.Log("Total deadends:" + initialDeadEnds.Count);
     }
 
     void IdentifySecondaryDeadEnds()
