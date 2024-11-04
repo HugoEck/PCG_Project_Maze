@@ -18,7 +18,7 @@ public class MazeGenerator : MonoBehaviour
     private bool[,] visited;
     private List<Vector2> solutionPath = new List<Vector2>();
     private Vector2 startPos;
-    private Vector2 goalPos;
+    public Vector2 goalPos;
 
     void Start()
     {

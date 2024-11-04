@@ -6,7 +6,9 @@ public class PlayerController : MonoBehaviour
     public float moveSpeed = 5f;
     public float moveDelay = 0.1f;
     public Vector2 goalPosition;
-    private TextMeshProUGUI stepText; 
+    private TextMeshProUGUI stepText;
+
+    private MazeManager mazeManager;
 
     private Vector2 targetPosition;
     private bool isMoving;
@@ -17,6 +19,7 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
+        mazeManager = FindObjectOfType<MazeManager>();
         stepText = FindObjectOfType<TextMeshProUGUI>();
 
         if (stepText == null)
@@ -46,8 +49,9 @@ public class PlayerController : MonoBehaviour
             {
                 isMoving = false;
 
-                if ((Vector2)transform.position == goalPosition)
+                if ((Vector2)transform.position == mazeManager.goalPos)
                 {
+                    StopTimer();
                     Debug.Log("Maze completed! Steps taken: " + stepsTaken + " | Time: " + Mathf.FloorToInt(timer) + "s");
                 }
             }
@@ -93,7 +97,12 @@ public class PlayerController : MonoBehaviour
     {
         if (stepText != null)
         {
-            stepText.text = $"Steps: {stepsTaken} | Time: {Mathf.FloorToInt(timer)}s";
+            stepText.text = $"Steps: {stepsTaken} | Time: {timer:F2}s";
         }
+    }
+    float StopTimer ()
+    {
+        timerStarted = false;
+        return timer;
     }
 }
