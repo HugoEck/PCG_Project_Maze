@@ -32,7 +32,12 @@ public class MazeManager : MonoBehaviour
 
     void Start()
     {
-        // Select and initialize the maze generator
+        // Step 1: Retrieve selected algorithm and maze size from PlayerPrefs
+        selectedAlgorithm = (MazeAlgorithm)PlayerPrefs.GetInt("algorithmType", (int)MazeAlgorithm.DFS);
+        width = PlayerPrefs.GetInt("mazeWidth", 20);
+        height = PlayerPrefs.GetInt("mazeHeight", 20);
+
+        // Step 2: Generate the maze
         switch (selectedAlgorithm)
         {
             case MazeAlgorithm.DFS:
@@ -46,26 +51,41 @@ public class MazeManager : MonoBehaviour
                 break;
         }
 
-        // Generate maze and get start position from generator
         maze = mazeGenerator.GenerateMaze(width, height);
         startPos = mazeGenerator.GetStartPosition();
 
+        // Step 3: Create visual representation of the maze
+        UpdateVisualMaze(maze);
 
-        // Initialize AgentMazeRefinement if it exists
+        // Step 4: Initialize and place goal
+        SetGoalPosition();
+        PlaceStartAndGoal();
+
+        // Step 5: Initialize AgentMazeRefinement if present
         AgentMazeRefinement agentRefinement = GetComponent<AgentMazeRefinement>();
         if (agentRefinement != null)
         {
-            agentRefinement.InitializeWithMazeData(maze, startPos, goalPos, width, height);
+            agentRefinement.InitializeWithMazeData(maze, startPos, goalPos);
+            Debug.Log("Agent Refinement Initialized");
         }
 
-        // Create visual representation of the maze and place start, goal, and player
-        UpdateVisualMaze(maze);
-        PlaceStartAndGoal();
+        // Step 6: After agents finish handling dead ends, place player
+        StartCoroutine(WaitForAgentsThenPlacePlayer(agentRefinement));
+    }
+
+    IEnumerator WaitForAgentsThenPlacePlayer(AgentMazeRefinement agentRefinement)
+    {
+        // Wait until agent refinement is done (or if there are no agents)
+        while (agentRefinement != null && !agentRefinement.IsDone)
+        {
+            yield return null;
+        }
+
+        // Now, place the player
         PlacePlayer();
         AdjustCameraToFitMaze();  // Ensure camera shows the whole maze
-        // Set goal position based on maze dimensions
-        SetGoalPosition();
     }
+
 
     private void AdjustCameraToFitMaze()
     {
