@@ -1,80 +1,99 @@
 using UnityEngine;
+using TMPro;
 
 public class PlayerController : MonoBehaviour
 {
-    public float moveSpeed = 5f;           // Speed of movement
-    public float moveDelay = 0.1f;         // Delay between moves when holding a key
+    public float moveSpeed = 5f;
+    public float moveDelay = 0.1f;
+    public Vector2 goalPosition;
+    private TextMeshProUGUI stepText; 
 
     private Vector2 targetPosition;
     private bool isMoving;
     private float moveTimer;
+    private int stepsTaken = 0;
+    private float timer = 0f; 
+    private bool timerStarted = false; 
 
     private void Start()
     {
-        // Set the initial target position to the player's starting position
+        stepText = FindObjectOfType<TextMeshProUGUI>();
+
+        if (stepText == null)
+        {
+            Debug.LogError("Step_Text TextMeshProUGUI not found in the scene.");
+            return;
+        }
+
         targetPosition = transform.position;
+        UpdateDisplayText();
     }
 
     private void Update()
     {
-        // If the player is already moving, update the position towards the target
+
+        if (timerStarted)
+        {
+            timer += Time.deltaTime;
+            UpdateDisplayText();
+        }
+
         if (isMoving)
         {
             transform.position = Vector2.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
 
-            // Stop moving if the target position is reached
             if ((Vector2)transform.position == targetPosition)
+            {
                 isMoving = false;
+
+                if ((Vector2)transform.position == goalPosition)
+                {
+                    Debug.Log("Maze completed! Steps taken: " + stepsTaken + " | Time: " + Mathf.FloorToInt(timer) + "s");
+                }
+            }
         }
         else
         {
-            // Handle continuous movement if a key is held down
-            moveTimer -= Time.deltaTime;
-            if (moveTimer <= 0f)
-            {
-                if (Input.GetKey(KeyCode.W))
-                {
-                    TryMove(Vector2.up);
-                }
-                else if (Input.GetKey(KeyCode.S))
-                {
-                    TryMove(Vector2.down);
-                }
-                else if (Input.GetKey(KeyCode.A))
-                {
-                    TryMove(Vector2.left);
-                }
-                else if (Input.GetKey(KeyCode.D))
-                {
-                    TryMove(Vector2.right);
-                }
-            }
+            if (Input.GetKey(KeyCode.W)) TryMove(Vector2.up);
+            else if (Input.GetKey(KeyCode.S)) TryMove(Vector2.down);
+            else if (Input.GetKey(KeyCode.A)) TryMove(Vector2.left);
+            else if (Input.GetKey(KeyCode.D)) TryMove(Vector2.right);
+
         }
     }
 
     private void TryMove(Vector2 direction)
     {
-        // Calculate the new position based on the direction
         Vector2 newPosition = (Vector2)transform.position + direction;
 
-        // Check if the new position is walkable
         if (IsWalkable(newPosition))
         {
-            targetPosition = newPosition; // Set the target position
-            isMoving = true;              // Start moving
-            //moveTimer = moveDelay;        // Reset the move delay
+            targetPosition = newPosition;
+            isMoving = true;
+            moveTimer = moveDelay;
+            stepsTaken++;
 
-            // Ensure player stays slightly in front by setting z-position to -1
-            transform.position = new Vector3(transform.position.x, transform.position.y, -1);
+            // Start the timer on the first move
+            if (!timerStarted)
+            {
+                timerStarted = true;
+            }
+
+            UpdateDisplayText();
         }
     }
 
     private bool IsWalkable(Vector2 position)
     {
-        // Check for obstacles (like walls) at the target position using a Collider2D overlap
         Collider2D hit = Physics2D.OverlapPoint(position);
-
-        // Ensure the target is a walkable floor (e.g., tagged as "Floor")
         return hit != null && hit.CompareTag("Floor");
+    }
+
+    private void UpdateDisplayText()
+    {
+        if (stepText != null)
+        {
+            stepText.text = $"Steps: {stepsTaken} | Time: {Mathf.FloorToInt(timer)}s";
+        }
     }
 }
