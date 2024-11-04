@@ -614,9 +614,10 @@ MonoBehaviour:
   startPrefab: {fileID: 3016908579655318593, guid: 3f9d56f41b2bc514d904fe70f9f5c203, type: 3}
   goalPrefab: {fileID: 3016908579655318593, guid: 559719cea6992624885f9e37e47d253b, type: 3}
   playerPrefab: {fileID: 2605630132837582212, guid: a258e299dd7b74c489f0f2f07e8c310b, type: 3}
+  agentPrefab: {fileID: 1990802133463292047, guid: 88a4bf192f9b9fe4c84b151abb477ed6, type: 3}
   goalPos: {x: 0, y: 0}
-  width: 15
-  height: 15
+  width: 20
+  height: 20
 --- !u!4 &1254316961
 Transform:
   m_ObjectHideFlags: 0
@@ -645,7 +646,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   agentPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
-  numAgents: 10
+  numAgents: 0
   closeStepDelay: 0.1
   openStepDelay: 0.1
   actionType: 1

@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.UI;
+using static MazeManager;
+using Unity.VisualScripting;
 
 public class MainMenuManager : MonoBehaviour
 {
@@ -24,9 +26,10 @@ public class MainMenuManager : MonoBehaviour
 
     private enum AlgorithmOptions
     {
-        Prim,
+
+        DFS,
         Kruskal,
-        DFS
+        Prim
     }
 
     private string selectedScene;
@@ -53,10 +56,34 @@ public class MainMenuManager : MonoBehaviour
         startButton.onClick.AddListener(StartScene);
     }
 
+
+
+
+
     void SetSelectedAlgorithm()
     {
-        // Get the selected scene name from the dropdown
-        selectedScene = algorithmNames[sceneDropdown.value];
+        // Get the selected algorithm option based on dropdown index
+        AlgorithmOptions selectedAlgorithmOption = (AlgorithmOptions)sceneDropdown.value;
+        selectedScene = sceneNames[sceneDropdown.value];
+        // Map the selected algorithm to PlayerPrefs using MazeManager's MazeAlgorithm enum
+        switch (selectedAlgorithmOption)
+        {
+            //case AlgorithmOptions.PickAlgorithm:
+
+            //    break;
+            case AlgorithmOptions.DFS:
+                PlayerPrefs.SetInt("algorithmType", (int)MazeManager.MazeAlgorithm.DFS);
+                Debug.Log("Selected Algorithm Type: " + PlayerPrefs.GetInt("algorithmType")); // Expecting 0
+                break;
+            case AlgorithmOptions.Kruskal:
+                PlayerPrefs.SetInt("algorithmType", (int)MazeManager.MazeAlgorithm.Kruskal);
+                Debug.Log("Selected Algorithm Type: " + PlayerPrefs.GetInt("algorithmType")); // Expecting 1
+                break;
+            case AlgorithmOptions.Prim:
+                PlayerPrefs.SetInt("algorithmType", (int)MazeManager.MazeAlgorithm.Prim);
+                Debug.Log("Selected Algorithm Type: " + PlayerPrefs.GetInt("algorithmType")); // Expecting 2
+                break;
+        }
     }
 
     void SetAgentOption()
