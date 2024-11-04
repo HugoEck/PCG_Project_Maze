@@ -4298,9 +4298,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneDropdown: {fileID: 1779731734}
   sceneNames:
-  - DFSScene
-  - KruskalScene
-  - PrimScene
+  - DFS
+  - Kruskal
+  - Prim
   agentDropdown: {fileID: 1798675501}
   agentCountInput: {fileID: 1509764702}
   agentMazeRefinement: {fileID: 0}
