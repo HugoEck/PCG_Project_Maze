@@ -50,7 +50,6 @@ public class MazeManager : MonoBehaviour
         maze = mazeGenerator.GenerateMaze(width, height);
         startPos = mazeGenerator.GetStartPosition();
 
-        // Find furthest point from start to set as goal
 
         // Initialize AgentMazeRefinement if it exists
         AgentMazeRefinement agentRefinement = GetComponent<AgentMazeRefinement>();
@@ -64,7 +63,8 @@ public class MazeManager : MonoBehaviour
         PlaceStartAndGoal();
         PlacePlayer();
         AdjustCameraToFitMaze();  // Ensure camera shows the whole maze
-        goalPos = FindFurthestPathFromStart(startPos);
+        // Set goal position based on maze dimensions
+        SetGoalPosition();
     }
 
     private void AdjustCameraToFitMaze()
@@ -126,10 +126,20 @@ public class MazeManager : MonoBehaviour
         }
     }
 
+    // Set the goal position in the upper-right corner, adjusting for wall thickness
+    private void SetGoalPosition()
+    {
+        // Check if width and height are even or odd
+        int wallThickness = (width % 2 == 0) ? 3 : 2;
+        goalPos = new Vector2Int(width - wallThickness, height - wallThickness);
+
+        // Log goal position for debugging
+        Debug.Log($"Goal Position set to: {goalPos}");
+    }
+
     // Method to find the furthest floor tile from a given start position
     public Vector2Int FindFurthestPathFromStart(Vector2Int start)
     {
-
         if (maze == null)
         {
             Debug.LogError("Maze is null in FindFurthestPathFromStart");
