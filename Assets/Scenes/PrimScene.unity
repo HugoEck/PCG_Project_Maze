@@ -372,15 +372,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b6a59cc82fc602408d44d97f7182de6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedAlgorithm: 2
+  selectedAlgorithm: 0
   wallPrefab: {fileID: 2578954439767863642, guid: bf78978874867964f987b6d4a39f0889, type: 3}
   floorPrefab: {fileID: 6652955654351153951, guid: 70c3f37f6e7232e4aad3546edc031210, type: 3}
   startPrefab: {fileID: 3016908579655318593, guid: 3f9d56f41b2bc514d904fe70f9f5c203, type: 3}
   goalPrefab: {fileID: 3016908579655318593, guid: 559719cea6992624885f9e37e47d253b, type: 3}
   playerPrefab: {fileID: 2605630132837582212, guid: a258e299dd7b74c489f0f2f07e8c310b, type: 3}
   goalPos: {x: 0, y: 0}
-  width: 50
-  height: 50
+  width: 32
+  height: 32
 --- !u!4 &1254316961
 Transform:
   m_ObjectHideFlags: 0
@@ -409,10 +409,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   agentPrefab: {fileID: 1990802133463292047, guid: 41926c8af2ec40246873a0112af607d9, type: 3}
-  numAgents: 0
-  closeStepDelay: 0.1
-  openStepDelay: 0.1
-  actionType: 0
+  numAgents: 30
+  stepDelay: 0.001
+  agentOpenDelay: 0
+  actionType: open
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

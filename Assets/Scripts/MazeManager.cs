@@ -73,7 +73,7 @@ public class MazeManager : MonoBehaviour
         if (mainCamera == null) return;
 
         // Calculate the maze center for 2D positioning
-        Vector3 mazeCenter = new Vector3((width - 1) / 2f, (height - 1) / 2f, -10);
+        Vector3 mazeCenter = new Vector3((width - 1) / 1f, (height - 1) / 2f, -10);
 
         // Set camera position to the maze center
         mainCamera.transform.position = mazeCenter;
