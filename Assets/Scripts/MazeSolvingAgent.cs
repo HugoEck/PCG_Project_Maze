@@ -25,7 +25,10 @@ public class MazeSolvingAgent : MonoBehaviour
     {
         this.maze = maze;
         this.start = start;
-        this.goal = goal;
+
+        // Set the goal position to the upper-right corner
+        this.goal = new Vector2Int(width - 2, height - 2); // Adjust for any outer walls if needed
+
         this.width = width;
         this.height = height;
 
@@ -126,7 +129,11 @@ public class MazeSolvingAgent : MonoBehaviour
     {
         List<Vector2Int> neighbors = new List<Vector2Int>();
 
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        // Prioritize directions based on proximity to the goal (upper-right preference)
+        Vector2Int[] directions = goal.x > cell.x && goal.y > cell.y
+            ? new Vector2Int[] { Vector2Int.right, Vector2Int.up, Vector2Int.left, Vector2Int.down }
+            : new Vector2Int[] { Vector2Int.up, Vector2Int.right, Vector2Int.left, Vector2Int.down };
+
         foreach (Vector2Int dir in directions)
         {
             Vector2Int neighbor = cell + dir;
