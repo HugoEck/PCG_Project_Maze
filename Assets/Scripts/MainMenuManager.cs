@@ -69,7 +69,6 @@ public class MainMenuManager : MonoBehaviour
 
     private void SetIncludeAgentPrefab(bool isEnabled)
     {
-        // Save the toggle state in PlayerPrefs
         PlayerPrefs.SetInt("IncludeAgentPrefab", isEnabled ? 1 : 0);
     }
 

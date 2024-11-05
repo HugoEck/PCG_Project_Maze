@@ -13,35 +13,32 @@ public class PrimMazeGenerator : MonoBehaviour, IMazeGenerator
 
     public int[,] GenerateMaze(int width, int height)
     {
-        // Initialize the maze array
+
         maze = new int[width, height];
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
-                maze[x, y] = WALL; // All cells start as walls
+                maze[x, y] = WALL; 
 
-        // Start from a random odd cell within the maze
+
         int startX = Random.Range(1, width / 2) * 2 - 1;
         int startY = Random.Range(1, height / 2) * 2 - 1;
         startPos = new Vector2Int(1, 1 );
 
         MarkCellAsPath(startX, startY);
 
-        // Generate the maze by processing frontiers
         while (frontiers.Count > 0)
         {
-            // Randomly select a frontier cell
+
             Vector2Int frontierCell = frontiers[Random.Range(0, frontiers.Count)];
             frontiers.Remove(frontierCell);
 
-            // Try to connect this frontier cell to an existing path
+
             if (TryCarvePathToNeighbor(frontierCell))
             {
-                // Mark this cell as part of the path
                 MarkCellAsPath(frontierCell.x, frontierCell.y);
             }
         }
 
-        // Set the goal position as the furthest path cell from start
         goalPos = MazeManager.Instance.FindFurthestPathFromStart(startPos);
 
         Debug.Log($"Maze generation complete with start at {startPos} and goal at {goalPos}");
@@ -54,7 +51,6 @@ public class PrimMazeGenerator : MonoBehaviour, IMazeGenerator
     {
         maze[x, y] = PATH;
 
-        // Add valid neighbors as frontiers
         AddFrontierCell(x + 2, y);
         AddFrontierCell(x - 2, y);
         AddFrontierCell(x, y + 2);
@@ -74,7 +70,6 @@ public class PrimMazeGenerator : MonoBehaviour, IMazeGenerator
     {
         List<Vector2Int> neighbors = new List<Vector2Int>();
 
-        // Collect neighbors that are paths
         if (IsPath(cell.x + 2, cell.y)) neighbors.Add(new Vector2Int(cell.x + 2, cell.y));
         if (IsPath(cell.x - 2, cell.y)) neighbors.Add(new Vector2Int(cell.x - 2, cell.y));
         if (IsPath(cell.x, cell.y + 2)) neighbors.Add(new Vector2Int(cell.x, cell.y + 2));
@@ -82,10 +77,9 @@ public class PrimMazeGenerator : MonoBehaviour, IMazeGenerator
 
         if (neighbors.Count == 0) return false;
 
-        // Randomly select a neighbor and carve a path to it
         Vector2Int neighbor = neighbors[Random.Range(0, neighbors.Count)];
-        Vector2Int between = (cell + neighbor) / 2; // Midpoint between cell and neighbor
-        maze[between.x, between.y] = PATH; // Carve a path between the two cells
+        Vector2Int between = (cell + neighbor) / 2;
+        maze[between.x, between.y] = PATH; 
         return true;
     }
 

@@ -43,7 +43,7 @@ public class MazeManager : MonoBehaviour
         width = PlayerPrefs.GetInt("mazeWidth", 20);
         height = PlayerPrefs.GetInt("mazeHeight", 20);
 
-        // Step 2: Generate the maze
+        //Generate Maze By Select Algorithm
         switch (selectedAlgorithm)
         {
             case MazeAlgorithm.PickAlgorithm:
@@ -63,14 +63,14 @@ public class MazeManager : MonoBehaviour
         maze = mazeGenerator.GenerateMaze(width, height);
         startPos = mazeGenerator.GetStartPosition();
 
-        // Step 3: Create visual representation of the maze
+        // Create visual representation of the maze
         UpdateVisualMaze(maze);
 
-        // Step 4: Initialize and place goal
+        // Initialize and place goal
         SetGoalPosition();
         PlaceStartAndGoal();
 
-        // Step 5: Initialize AgentMazeRefinement if present
+        // Initialize AgentMazeRefinement if present
         AgentMazeRefinement agentRefinement = GetComponent<AgentMazeRefinement>();
         if (agentRefinement != null)
         {
@@ -78,7 +78,7 @@ public class MazeManager : MonoBehaviour
             Debug.Log("Agent Refinement Initialized");
         }
 
-        // Step 6: After agents finish handling dead ends, place player
+        //After agents finish handling dead ends, place player
         StartCoroutine(WaitForAgentsThenPlacePlayer(agentRefinement));
 
 
@@ -109,9 +109,9 @@ public class MazeManager : MonoBehaviour
             yield return null;
         }
 
-        // Now, place the player
+
         PlacePlayer();
-        AdjustCameraToFitMaze();  // Ensure camera shows the whole maze
+        AdjustCameraToFitMaze();  
         if (agentPrefab != null)
         {
             GameObject agentInstance = Instantiate(agentPrefab, new Vector3(startPos.x, startPos.y, -1), Quaternion.identity);
@@ -129,15 +129,13 @@ public class MazeManager : MonoBehaviour
         Camera mainCamera = Camera.main;
         if (mainCamera == null) return;
 
-        // Calculate the maze center for 2D positioning
         Vector3 mazeCenter = new Vector3((width - 1) / 1f, (height - 1) / 2f, -10);
 
-        // Set camera position to the maze center
         mainCamera.transform.position = mazeCenter;
 
-        // Adjust orthographic size based on maze dimensions
+
         float aspectRatio = (float)Screen.width / Screen.height;
-        float verticalSize = height / 2f + 1; // Add some padding
+        float verticalSize = height / 2f + 1; 
         float horizontalSize = (width / 2f + 1) / aspectRatio;
 
         mainCamera.orthographicSize = Mathf.Max(verticalSize, horizontalSize);
@@ -145,7 +143,6 @@ public class MazeManager : MonoBehaviour
 
     public void PlaceStartAndGoal()
     {
-        // Instantiate start and goal prefabs at start and goal positions
         Instantiate(startPrefab, new Vector3(startPos.x, startPos.y, 0), Quaternion.identity, transform);
         Instantiate(goalPrefab, new Vector3(goalPos.x, goalPos.y, 0), Quaternion.identity, transform);
 
@@ -154,7 +151,6 @@ public class MazeManager : MonoBehaviour
 
     private void PlacePlayer()
     {
-        // Instantiate the player at the start position
         GameObject player = Instantiate(playerPrefab, new Vector3(startPos.x, startPos.y, -1), Quaternion.identity);
         Debug.Log("Player placed at start position.");
     }
@@ -163,7 +159,7 @@ public class MazeManager : MonoBehaviour
     {
         foreach (Transform child in transform)
         {
-            Destroy(child.gameObject); // Clear old maze elements
+            Destroy(child.gameObject);
         }
 
         for (int x = 0; x < maze.GetLength(0); x++)
@@ -174,7 +170,6 @@ public class MazeManager : MonoBehaviour
                 GameObject prefab = maze[x, y] == 0 ? wallPrefab : floorPrefab;
                 GameObject tile = Instantiate(prefab, position, Quaternion.identity, transform);
 
-                // Tag the tile as "Floor" for player navigation if it's a walkable path
                 if (maze[x, y] == 1)
                 {
                     tile.tag = "Floor";
@@ -183,24 +178,20 @@ public class MazeManager : MonoBehaviour
         }
     }
 
-    // Set the goal position in the upper-right corner, adjusting for wall thickness
     private void SetGoalPosition()
     {
-        // Check if width and height are even or odd
         int wallThickness = (width % 2 == 0) ? 3 : 2;
         goalPos = new Vector2Int(width - wallThickness, height - wallThickness);
 
-        // Log goal position for debugging
         Debug.Log($"Goal Position set to: {goalPos}");
     }
 
-    // Method to find the furthest floor tile from a given start position
     public Vector2Int FindFurthestPathFromStart(Vector2Int start)
     {
         if (maze == null)
         {
             Debug.LogError("Maze is null in FindFurthestPathFromStart");
-            return start; // Return start or handle the error
+            return start; 
         }
 
         Queue<Vector2Int> queue = new Queue<Vector2Int>();
@@ -217,19 +208,18 @@ public class MazeManager : MonoBehaviour
             Vector2Int current = queue.Dequeue();
             int currentDistance = distances[current];
 
-            // Explore neighbors in 4 cardinal directions
             Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
             foreach (var dir in directions)
             {
                 Vector2Int neighbor = current + dir;
 
-                // Check if the neighbor is within bounds, is a floor tile, and hasn't been visited
                 if (IsInBounds(neighbor) && maze[neighbor.x, neighbor.y] == 1 && !distances.ContainsKey(neighbor))
                 {
                     distances[neighbor] = currentDistance + 1;
                     queue.Enqueue(neighbor);
 
-                    // Update furthest cell if this is the longest path found
+
+                    //longest path
                     if (distances[neighbor] > maxDistance)
                     {
                         maxDistance = distances[neighbor];
@@ -249,14 +239,12 @@ public class MazeManager : MonoBehaviour
 
     public void UpdateGoalAfterDeadEndProcessing(Vector2Int start)
     {
-        // Find the furthest accessible path cell from start
         goalPos = FindFurthestPathFromStart(start);
         Debug.Log($"Updated Goal Position after dead-end processing: {goalPos}");
     }
 
     private IEnumerator TogglePrefabsWithDelay()
     {
-        // Wait a short time to ensure all objects are instantiated
         yield return new WaitForSeconds(0.1f);
 
         TogglePrefabs();

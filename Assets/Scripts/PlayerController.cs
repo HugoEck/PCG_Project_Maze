@@ -77,7 +77,6 @@ public class PlayerController : MonoBehaviour
             moveTimer = moveDelay;
             stepsTaken++;
 
-            // Start the timer on the first move
             if (!timerStarted)
             {
                 timerStarted = true;

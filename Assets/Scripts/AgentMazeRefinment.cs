@@ -9,8 +9,8 @@ public class AgentMazeRefinement : MonoBehaviour
 
     private int[,] maze;
     public int numAgents = 3;
-    public float closeStepDelay = 0.1f; // Adjust delay for visibility
-    public float openStepDelay = 0.1f; // Adjust delay for visibility
+    public float closeStepDelay = 0.1f;
+    public float openStepDelay = 0.1f; 
     private Vector2Int startPos;
     private Vector2Int goalPos;
     private int width;
@@ -19,9 +19,9 @@ public class AgentMazeRefinement : MonoBehaviour
 
     public enum ActionType
     {
-        Close,           // Close dead ends
-        Open,            // Open dead ends
-        CloseAndOpen     // Close then open dead ends
+        Close, 
+        Open,          
+        CloseAndOpen     
     }
 
     public ActionType actionType = ActionType.Close;
@@ -29,7 +29,7 @@ public class AgentMazeRefinement : MonoBehaviour
     private List<Vector2Int> initialDeadEnds = new List<Vector2Int>();
     private List<Vector2Int> secondaryDeadEnds = new List<Vector2Int>();
 
-    // Modify InitializeWithMazeData to work with updated properties
+
     public void InitializeWithMazeData(int[,] maze, Vector2Int start, Vector2Int goal)
     {
         if (maze == null)
@@ -38,7 +38,6 @@ public class AgentMazeRefinement : MonoBehaviour
             return;
         }
 
-        // Retrieve settings from PlayerPrefs
         numAgents = PlayerPrefs.GetInt("numAgents", 0);
         actionType = (ActionType)PlayerPrefs.GetInt("actionType", (int)ActionType.Close);
 
@@ -55,12 +54,12 @@ public class AgentMazeRefinement : MonoBehaviour
 
         if (numAgents > 0)
         {
-            IsDone = false; // Agents are not done yet
+            IsDone = false;
             StartCoroutine(AssignAgentsToHandleDeadEnds());
         }
         else
         {
-            IsDone = true; // No agents, so we are immediately done
+            IsDone = true; 
         }
     }
 
@@ -133,11 +132,10 @@ public class AgentMazeRefinement : MonoBehaviour
             Destroy(agentObj);
         }
 
-        // After refinement, recalculate goal position using MazeManager
+
         goalPos = MazeManager.Instance.FindFurthestPathFromStart(startPos);
         MazeManager.Instance.PlaceStartAndGoal();
 
-        // Set IsDone to true, indicating the refinement is complete
         IsDone = true;
     }
 
